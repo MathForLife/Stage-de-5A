@@ -1,1 +1,0 @@
-Ceci est le fichier READ-ME du projet de stage ;)
