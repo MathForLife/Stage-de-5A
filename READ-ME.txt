@@ -1,1 +1,1 @@
-Ceci est le fixhier READ-ME du projet de stage ;)
+Ceci est le fichier READ-ME du projet de stage ;)
