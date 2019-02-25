@@ -1,4 +1,4 @@
-é%% Initialisation 
+%% Initialisation 
 addpath(genpath('../'));
 SelectImage={'eight.tif','TumeurCerveau.png','Poumon.png','CerveauDetail1.png'};
 Image=double(imread(SelectImage{1}));
