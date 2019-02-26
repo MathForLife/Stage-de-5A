@@ -20,7 +20,7 @@ function [ub, J, err_u,err_J, niter]=DualFormulation(Image, u0, lambda, mu, tho_
     % Initialiation de I1 et I2
     I1=(Image-c1).^2; I2=(Image-c2).^2;
     
-    J(niter)=compute_energy(u0,z1,z2,I1,I2,lambda);  
+    J(niter)=compute_energy_smooth(u0,I1,I2,lambda,0); 
     % Premiere iteration de l'algorithme
     niter=2; 
     
@@ -34,15 +34,15 @@ function [ub, J, err_u,err_J, niter]=DualFormulation(Image, u0, lambda, mu, tho_
     utilde=u+theta*(u-uold);
     ub=u>mu;
     
-    J(niter)=compute_energy(u,z1,z2,I1,I2,lambda); 
+    J(niter)=compute_energy_smooth(ub,I1,I2,lambda,0);
     % Calcul des erreurs
     cond_u=norm(u-uold)/norm(uold);
     cond_J=abs(J(niter)-J(niter-1))/abs(J(niter-1));
     
-    err_u(1)=cond_u; err_u(niter)=cond_u;
-    err_J(1)=cond_J; err_J(niter)=cond_J;
+    err_u(1)=10; err_u(niter)=cond_u;
+    err_J(1)=10; err_J(niter)=cond_J;
     %% Boucle while
-    while (niter<itermax )%&& cond_u>stop_1 && cond_J>stop_2)
+    while (niter<itermax && cond_u>stop_1 && cond_J>stop_2)
         niter=niter+1;
         uold=u;
         % Dans le cas où les images sont bruitées, supposer c1 et c2 connus est faux
@@ -69,7 +69,7 @@ function [ub, J, err_u,err_J, niter]=DualFormulation(Image, u0, lambda, mu, tho_
         
         ub=u>mu;
         
-        J(niter)=compute_energy(u,z1,z2,I1,I2,lambda);
+        J(niter)=compute_energy_smooth(ub,I1,I2,lambda,0);
         
         % Calcul des erreurs
         cond_u=norm(u-uold)/norm(uold);

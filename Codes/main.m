@@ -1,11 +1,11 @@
 %% Initialisation 
 addpath(genpath('../'));
-SelectImage={'eight.tif','TumeurCerveau.png','Poumon.png','CerveauDetail1.png'};
+SelectImage={'eight.tif','TumeurCerveaubis.png','Poumon.png','CerveauDetail1.png'};
 Image=double(imread(SelectImage{1}));
 
 Selection={'Bande étroite','Histogrammes'};
 %select='Histogrammes';
-select='Bande étroite';
+select='Histogrammes';
 
 [m,n,p]=size(Image);
 if p==3
@@ -30,12 +30,12 @@ mask2=roipoly(Image/255.); close; c2=mean(Image(mask2));
 
 if strcmp(select,Selection{1})
     % Definition des paramètres numeriques 
-    lambda=1.e-3; gamma=0.1;  %lambda : paramètre d'attache aux donnés  %gamma : paramètre de convexité 
+    lambda=1.e-3; gamma=1;  %lambda : paramètre d'attache aux donnés  %gamma : paramètre de convexité 
     tho_u=0.5; tho_z=0.25;    %tho_u & tho_z : pas de descente pour les algo Forward-Backward
     beta=5; mu=0.1;           %beta : paramètre de la bande étroite     %mu : paramètre de seuilage 
     stop_1=0.005; stop_2=0.005;   %sigma : critère d'arrêt sur la décroissance de la fonctionnelle
 
-    reset_band=5; % Nombre d'iterations de l'algo Primal-Dual avant de recalculer la level-set
+    reset_band=10; % Nombre d'iterations de l'algo Primal-Dual avant de recalculer la level-set
     itermax=100;
 
     %% Algorithme de Chambol-Pock avec bande étroite
@@ -45,10 +45,10 @@ if strcmp(select,Selection{1})
 end
 
 if strcmp(select,Selection{2})
-    stop_1=0.1 ; stop_2=0.1;
-    beta=0.75; nbins=2;
-    lambda=1.e-6; mu=0.1;
-    itermax=100;
+    stop_1=0.001 ; stop_2=0.001;
+    beta=0.5; nbins=5;
+    lambda=1.e-2; mu=0.1;
+    itermax=500;
     
     [g0,g1,q2_0,q3_0,T,sigma_1,sigma_2,sigma_3,b]=create_histo(Image,mask1,mask2,nbins);
     

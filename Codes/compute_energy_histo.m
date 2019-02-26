@@ -1,6 +1,6 @@
-function J=compute_energy_histo(u,z1,z2,g0,g1,mu,beta,varargin)
-    if nargin==7
-        TV=sum(sum(u.*div(z1,z2)));
+function J=compute_energy_histo(u,g0,g1,mu,beta,varargin)
+    if nargin==5
+        TV=sum(sum(norm_eps(gradx(u),grady(u),0)));
         J_h1=sum(abs(sum(sum(u.*g1,1),2)),3);
         J_h0=sum(abs(sum(sum((1-u).*g0,1),2)),3);
         J=TV+mu/beta*J_h1+mu/(1-beta)*J_h0;

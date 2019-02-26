@@ -1,10 +1,10 @@
-function [g0,g1,q2_0,q3_0,T,sigma_1,sigma_2,sigma_3,b]=create_histo(Image,mask1,mask2,nbins)
+ function [g0,g1,q2_0,q3_0,T,sigma_1,sigma_2,sigma_3,b]=create_histo(Image,mask1,mask2,nbins)
 [m,n]=size(Image);
 
 subplot(211)
-h0=histogram(Image(mask1),nbins,'Normalization','pdf');
+h0=histogram(Image(mask1),nbins,'Normalization','probability');
 subplot(212)
-h1=histogram(Image(mask2),nbins,'Normalization','pdf');
+h1=histogram(Image(mask2),nbins,'Normalization','probability');
 
 g0=zeros(m,n,nbins); g1=zeros(m,n,nbins);
 sigma_1=0.2; sigma_2=nan(nbins,1); sigma_3=nan(nbins,1);
