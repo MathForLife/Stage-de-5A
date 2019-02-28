@@ -1,4 +1,4 @@
-function [ub,J,niter]=histo_loco(mask,g0,g1,q2_0,q3_0,b,T,sigma_1,sigma_2,sigma_3,mu,beta,s,stop_1,stop_2,itermax)
+function [ub,J,niter]=histo_loco(mask,g0,g1,b,T,sigma_1,sigma_2,sigma_3,mu,beta,s,stop_1,stop_2,itermax)
     niter=1;
     
     % Initialisation de la bande étroite

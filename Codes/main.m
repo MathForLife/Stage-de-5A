@@ -2,19 +2,16 @@
 addpath(genpath('../'));
 SelectImage={'eight.tif','TumeurCerveaubis.png','Poumon.png','CerveauDetail1.png'};
 Image=double(imread(SelectImage{1}));
+% Image=zeros(248);
+% Image(62:186,62:186)=255;
 
 Selection={'Bande étroite','Histogrammes'};
-%select='Histogrammes';
+%select='Bande étroite';
 select='Histogrammes';
 
-[m,n,p]=size(Image);
-if p==3
-    Image=Image(:,:,1);
-end
+Image=Image_Normalisation(Image,"2D");
 
 bruitage=false;
-cinconnu=false;
-
 if bruitage==true
     bruit=0.1;
     Image=Image+bruit*255*randn(size(Image));
@@ -25,8 +22,8 @@ if bruitage==true
     Image=Image-Min;
     Image=Image*255/(Max-Min);
 end
-mask1=roipoly(Image/255.);  c1=mean(Image(mask1)); 
-mask2=roipoly(Image/255.); close; c2=mean(Image(mask2));
+mask1=roipoly(Image);  c1=mean(Image(mask1)); 
+mask2=roipoly(Image); close; c2=mean(Image(mask2));
 
 if strcmp(select,Selection{1})
     % Definition des paramètres numeriques 
@@ -46,14 +43,14 @@ end
 
 if strcmp(select,Selection{2})
     stop_1=0.001 ; stop_2=0.001;
-    beta=0.5; nbins=5;
-    lambda=1.e-2; mu=0.1;
-    itermax=500;
+    beta=0.5; nbins=10;
+    mu=1.e2; s=0.9;
+    itermax=100;
     
-    [g0,g1,q2_0,q3_0,T,sigma_1,sigma_2,sigma_3,b]=create_histo(Image,mask1,mask2,nbins);
+    [g0,g1,T,sigma_1,sigma_2,sigma_3,b]=create_histo(Image,mask1,mask2,nbins);
     
     tic
-    [ub,J,niter]=histo_loco(mask1,g0,g1,q2_0,q3_0,b,T,sigma_1,sigma_2,sigma_3,lambda,beta,mu,stop_1,stop_2,itermax);
+    [ub,J,niter]=histo_loco(mask1,g0,g1,b,T,sigma_1,sigma_2,sigma_3,mu,beta,s,stop_1,stop_2,itermax);
     t1=toc;
 end
 
