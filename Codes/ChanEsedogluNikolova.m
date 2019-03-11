@@ -23,6 +23,7 @@ function [ub, J, err_u,err_J, niter]=ChanEsedogluNikolova(Image, u0, lambda, mu,
     ub=u>mu;
     
     J(niter)=compute_energy_smooth(ub,I1,I2,lambda,eps); 
+    
     % Calcul des erreurs
     cond_u=norm(u-uold)/norm(uold);
     cond_J=abs(J(niter)-J(niter-1))/abs(J(niter-1));
@@ -32,8 +33,8 @@ function [ub, J, err_u,err_J, niter]=ChanEsedogluNikolova(Image, u0, lambda, mu,
     
     while (niter<itermax && cond_u>stop_1 && cond_J>stop_2)
         niter=niter+1;
+        
         uold=u;
-
         if cinconnu
             c1=sum(sum(Image.*uold))/sum(sum(uold));
             c2=sum(sum(Image.*(1-uold)))/sum(sum(1-uold));
@@ -51,12 +52,21 @@ function [ub, J, err_u,err_J, niter]=ChanEsedogluNikolova(Image, u0, lambda, mu,
         ub=u>mu;
         
         J(niter)=compute_energy_smooth(ub,I1,I2,lambda,eps);
+        
         % Calcul des erreurs
         cond_u=norm(u-uold)/norm(uold);
         cond_J=abs(J(niter)-J(niter-1))/abs(J(niter-1));
-
-        err_u(niter)=cond_u;
-        err_J(niter)=cond_J;
+        if J(niter)>J(niter-1)
+            niter=niter-1;
+            
+            u=uold;
+            tho=tho/2;
+            fprintf('\tho= %5.3f, niter=%d\n',tho,niter)
+        else
+            err_u(niter)=cond_u;
+            err_J(niter)=cond_J;
+        end
+        
     end
     err_u(isnan(err_u))=[];
     err_J(isnan(err_J))=[];

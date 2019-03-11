@@ -1,0 +1,58 @@
+\documentclass[11pt]{book}
+%%%%%%%%%%%% Importation des packages %%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage[utf8]{inputenc}    
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}     
+
+\usepackage{layout}  % Permet de visualiser la disposition du texte 
+
+\usepackage[top=2cm, bottom=2cm, left=2cm, right=2cm]{geometry} % Modifie les différentes marges 
+
+\usepackage{setspace} % Augmente les interlignes dans le document
+
+\usepackage{xcolor} % Permet d'écrire du texte en couleur
+
+\usepackage{listings} % Permet de mettre en forme du code informatique
+
+\usepackage{mathtools}
+%%%%%%%%%%%%%%%%% Definition des propriétés des commandes %%%%%%%%%%%%%%%%%%%%%
+
+\pagestyle{headings} % Définit les pieds de page et les en-tête 
+% plain = numéro de page en bas, 
+% headings = numéro de page + titre chapitre en haut
+% empty = vide
+
+\definecolor{bonjour}{gray}{0.5} % Définition d'une couleur en niveau de gris
+\definecolor{chiasse}{rgb}{0.3,1,0.3} % Définition d'une nouvelle couleur 
+
+% Paramètres pour la coloration de code ;)
+\lstset{ 
+language=nom_du_langage,        % choix du langage
+basicstyle=\footnotesize,       % taille de la police du code
+numbers=left,                   % placer le numéro de chaque ligne à gauche (left) 
+numbers=right,                  % placer le numéro de chaque ligne à droite (right)
+numberstyle=\normalsize,        % taille de la police des numéros
+numbersep=7pt,                  % distance entre le code et sa numérotation
+backgroundcolor=\color{white},  % couleur du fond 
+% Possibilité d'utilisation du package color
+}
+
+\begin{document}
+
+\chapter{Ta mère}
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+Fusce condimentum tempor risus cursus aliquet.
+\begin{quote}
+Tout individu a droit à la vie, à la liberté et à la sûretéde sa personne. \end{quote}
+consectetur adipiscing elit. 
+Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+Nulla volutpat metus ut magna aliquam nec porttitor neque sodales. 
+\begin{quotation}
+Tout individu a droit à la vie, à la liberté et à la sûreté de sa personne.  \end{quotation}
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+Fusce condimentum tempor risus cursus aliquet.
+Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+
+$$3x+2=\lambda x$$
+\textcolor{chiasse}{Ta mère !!!}
+ \end{document}

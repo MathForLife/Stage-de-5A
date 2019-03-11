@@ -1,1 +1,88 @@
-Bonjour ma petite couille <3
+\documentclass{report}
+
+\usepackage[utf8]{inputenc}    % Permet d'utiliser les caractères spéciaux
+\usepackage[T1]{fontenc}		% Idem
+
+\usepackage[french]{babel} % Utiliser la version française 
+
+\usepackage{layout}  % Permet de visualiser la disposition du texte 
+
+\usepackage[top=2cm, bottom=2cm, left=2cm, right=2cm]{geometry} % Modifie les différentes marges 
+
+\usepackage{setspace} % Augmente les interlignes dans le document
+
+\usepackage{mathtools} % Pour tout ce qui est outils maths
+
+\usepackage{graphicx}
+
+\pagestyle{headings} % Définit les pieds de page et les en-tête 
+% plain = numéro de page en bas, 
+% headings = numéro de page + titre chapitre en haut
+% empty = vide
+\graphicspath{{../Images/}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Commande pour afficher Figure avec légende
+\newcommand{\image}[3][0.8]{
+\begin{figure}[h]
+\centering
+\includegraphics[width=#1\textwidth,height=#1\textheight,keepaspectratio]{#2}
+\caption{#3}
+\label{Fig-#2}
+\end{figure}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{Etude d'algorithmes de segmentation appliqués au cadre médical}
+\author{Robin CREMESE}
+\date{\today}
+\begin{document}
+\layout
+\part{Etude préliminaire des algorithmes}
+\label{P-Etude préliminaire des algorithmes}
+\chapter{Trouver un nom au chapitre}
+\section{Présentation des méthodes}
+\label{S-Présentation des méthodes}
+\subsection{Méthode de Chan-Esedoglu-Nikolova}
+\label{SS-Méthode CEN}
+On suppose les 2 couleurs $c_1$ et $c_2$ connues, ou du moins bien estimées.
+
+La fonctionnelle qu'on cherche à minimiser est :
+\begin{equation}
+\label{Eq-J_CEN}
+J(u)=\int_{\Omega}||\nabla u(x)||_{\epsilon}dx+\lambda\Big[\int_{\Omega}|I(x)-c_1|^2u(x)dx+
+\int_{\Omega}|I(x)-c_2|^2(1-u(x))dx\Big]
+\end{equation}
+L'équation qui définie notre algorithme est :
+\begin{equation}
+\label{Eq-CEN}
+	u_{k+1} =P_{\mathcal{A}}\Bigg(u_k+\tau \bigg(div\bigg(\frac{\nabla u_k}
+	{||\nabla u_k||_{\epsilon}}\bigg)-\lambda \big[(I-c_1)cv ^2-(I-c_2)^2\big]\bigg)\Bigg)\\
+\end{equation}
+\subsection{Méthode de Chambol-Pock}
+\label{SS-Méthode CP}
+La fonctionnelle dont on cherche un point selle est :
+
+\begin{eqnarray}
+\label{Eq-J_CP}
+		J(u,z)& =&\int_{\Omega}\nabla u(x)\cdot \textbf{z}dx+\lambda\Big[\int_{\Omega}|I(x)-c_1|^2u(x)dx+
+\int_{\Omega}|I(x)-c_2|^2(1-u(x))dx\Big]\\
+	&=& \int_{\Omega}u(x)div(\textbf{z})dx+\lambda\Big[\int_{\Omega}|I(x)-c_1|^2u(x)dx+
+\int_{\Omega}|I(x)-c_2|^2(1-u(x))dx\Big]
+\end{eqnarray}
+
+
+L'équation qui définie notre algorithme est :
+\begin{equation}
+\label{Eq-CP}
+	\begin{cases}
+	z_{k+1} = P_{\mathcal{B}}(z_k+\tau_z \nabla \tilde{u}_k)\\
+	
+	u_{k+1} =P_{\mathcal{A}}\Big(u_k+\tau_u \big(div(z_{k+1})-\lambda \big[(I-c_1)^2-(I-c_2)^2\big]\big)\Big)\\
+
+	\tilde{u}_{k+1}=u_{k+1}+\theta (u_{k+1}-u_k)
+	\end{cases}
+\end{equation}
+\section{Résultats de segmentations}
+\label{S-Résultats de segmentations}
+On affiche ici les résultat de la segmentation de 3 images par nos 2 algorithmes
+\image[1]{Square}{Bonjour}
+\end{document}

@@ -17,6 +17,7 @@ function [ub, J, err_u,err_J, niter]=DualFormulation(Image, u0, lambda, mu, tho_
     z1(nCond)=z1(nCond)./normeZ(nCond);
     z2(nCond)=z2(nCond)./normeZ(nCond);
     
+    z1old=z1; z2old=z2;
     % Initialiation de I1 et I2
     I1=(Image-c1).^2; I2=(Image-c2).^2;
     
@@ -24,7 +25,7 @@ function [ub, J, err_u,err_J, niter]=DualFormulation(Image, u0, lambda, mu, tho_
     % Premiere iteration de l'algorithme
     niter=2; 
     
-    z1=z1+tho_z*u_x; z2=z2+tho_z*u_y; 
+    z1=z1old+tho_z*u_x; z2=z2old+tho_z*u_y; 
     normeZ=norm_eps(z1,z2,0);
     nCond=normeZ>1;
     z1(nCond)=z1(nCond)./normeZ(nCond); z2(nCond)=z2(nCond)./normeZ(nCond);
@@ -44,7 +45,8 @@ function [ub, J, err_u,err_J, niter]=DualFormulation(Image, u0, lambda, mu, tho_
     %% Boucle while
     while (niter<itermax && cond_u>stop_1 && cond_J>stop_2)
         niter=niter+1;
-        uold=u;
+        
+        uold=u; z1old=z1; z2old=z2;
         % Dans le cas où les images sont bruitées, supposer c1 et c2 connus est faux
         if cinconnu
             c1=sum(sum(Image.*uold))/sum(sum(uold));
@@ -57,7 +59,7 @@ function [ub, J, err_u,err_J, niter]=DualFormulation(Image, u0, lambda, mu, tho_
         u_y=grady(utilde);
         
         % calcul de z_{k+1}
-        z1=z1+tho_z*u_x; z2=z2+tho_z*u_y; 
+        z1=z1old+tho_z*u_x; z2=z2old+tho_z*u_y; 
         normeZ=norm_eps(z1,z2,0);
         nCond=normeZ>1;
         z1(nCond)=z1(nCond)./normeZ(nCond); z2(nCond)=z2(nCond)./normeZ(nCond);
@@ -69,14 +71,22 @@ function [ub, J, err_u,err_J, niter]=DualFormulation(Image, u0, lambda, mu, tho_
         
         ub=u>mu;
         
+        % Calcul de l'énergie avec un terme de lissage nul
         J(niter)=compute_energy_smooth(ub,I1,I2,lambda,0);
         
         % Calcul des erreurs
         cond_u=norm(u-uold)/norm(uold);
         cond_J=abs(J(niter)-J(niter-1))/abs(J(niter-1));
-
-        err_u(niter)=cond_u;
-        err_J(niter)=cond_J;
+        if J(niter)>J(niter-1)
+            niter=niter-1;
+            
+            u=uold; z1=z1old; z2=z2old;
+            tho_u=tho_u/2; tho_z=2*tho_z;
+            fprintf('\tho_u= %f, \tho_z= %f, niter=%d\n',tho_u,tho_z,niter)
+        else
+            err_u(niter)=cond_u;
+            err_J(niter)=cond_J;
+        end
     end
     err_u(isnan(err_u))=[];
     err_J(isnan(err_J))=[];
