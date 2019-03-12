@@ -11,7 +11,7 @@
 
 \usepackage{setspace} % Augmente les interlignes dans le document
 
-\usepackage{mathtools} % Pour tout ce qui est outils maths
+\usepackage{mathtools,amsfonts} % Pour tout ce qui est outils maths + texte math
 
 \usepackage{graphicx}
 
@@ -36,26 +36,64 @@
 \date{\today}
 \begin{document}
 \layout
-\part{Etude préliminaire des algorithmes}
-\label{P-Etude préliminaire des algorithmes}
-\chapter{Trouver un nom au chapitre}
+\part{Introduction}
+\label{P-Introduction}
+\chapter{Présentation du projet}
+\label{C-Présentation du projet}
+La problématique présentée par l'entreprise Sophia-Genetics à l'équipe du laboratoire de maths de Bordeaux est de trouver des algorithmes performants pour une segmentation binaire d'images 3D issues de scanners et d'IRM de poumons.
+
+Pour se faire, plusieurs axes ont étés abordés, à commencer par une étude préliminaire des différents  algorithme de segmentation basés sur l'évolution de contours. L'étude s'est ensuite poursuivie sur l'utilisation d'histogrammes pour segmenter les images...
+
+\chapter{Etude préliminaire des algorithmes}
+\label{C-Etude préliminaire des algorithmes}
+Dans ce chapitre nous nous intéresserons aux méthodes de bases par contour actif utilisées pour résoudre notre problème de segmentation.
+
+L'idée principale est de faire évoluer un opérateur de masquage $u_b:\Omega \rightarrow \{0,1\}$ sur une image en définissant une fonctionnelle dépendante des couleurs moyennes des deux régions à segmenter et qu'on cherchera à minimiser.
+\section{Notations}
+\label{S-Notations}
+Afin d'être consistant dans toute la suite de ce rapport, nous utiliserons les notations suivante pour décrire les objets mathématiques utilisés :
+\begin{itemize}
+	\item[*] L'image, qu'elle soit 2D ou 3D, est vue comme comme une fonction $I$ de 2 ou 3 variables allant d'un espace $\Omega \subset \mathbb{R}^d \text{ , avec }d \in \{2,3\}$ à valeur dans l'intervalle [0,1].
+	\item[*] La fonction de masquage est une fonction binaire $u_b:\Omega \rightarrow \{0,1\}$ qui, à chaque pixel de l'image, indique s'il fait partie de la région à segmenter ou non.
+	\item[*] On peut ainsi définir la région que l'on souhaite segmenter comme $\Omega_1=\{x\in \Omega ~|~ u_b(x)=1\}$ et le fond de l'image comme $\Omega_0=\Omega \setminus \Omega_1$.
+	\item[*] La fonctionnelle que l'on cherchera à faire décroitre, aussi appelée fonction coût sera notée J et elle s'écrira comme la somme de 2 termes : 
+	\begin{itemize}
+		\item[-] Un terme d'attache aux données
+		\item[-] Un terme de régularisation de la solution		
+	\end{itemize}
+	Le paramètre servant à équilibrer l'influence de chaque terme sur la fonctionnelle $J$ sera appelé le seuil et sera noté $\lambda$.
+	\item[*] On note de manière générale $c_i$ la couleur correspondant à la région i de l'image. Dans le cas de notre segmentation binaire $i\in \{0,1\}$ et $c_i$ peut être vue comme la moyenne des couleurs au sein de la région i. 
+\end{itemize}
 \section{Présentation des méthodes}
 \label{S-Présentation des méthodes}
+\subsection{Méthode de Chan-Vese}
+\label{S-Méthode de Chan-Vese}
+Le principe de cette méthode est de définir les différentes régions du masque comme la composée de la fonction de Heaviside avec une fonction de distance signée, appelée fonction Level-Set et notée $\phi$.\\
+\underline{Remarque :} Pour rappel, la fonction de Heaviside est définie par $H:x\in \mathbb{R}\rightarrow \begin{cases} 1 \text{ si } x\geq 0 \\ 0 \text{ sinon}\end{cases}$.
+
+\\
+Un exemple de fonction Level-Set est donnée à la figure \cite{•} où est calculé la distance 
+
+La fonctionnelle J qu'on cherchera à minimiser comportera différents termes.  
+Elle s'écrit donc de la manière suivante :
+\begin{equation}
+J(u)=\int_{\Omega}||\nabla H(\phi(x))||_{\epsilon}dx+\lambda\Big[\int_{\Omega}|I(x)-c_1|^2H(\phi(x))dx+
+\int_{\Omega}|I(x)-c_0|^2(1-H(\phi(x)))dx\Big]
+\end{equation}
 \subsection{Méthode de Chan-Esedoglu-Nikolova}
 \label{SS-Méthode CEN}
-On suppose les 2 couleurs $c_1$ et $c_2$ connues, ou du moins bien estimées.
+On suppose les 2 couleurs $c_1$ et $c_0$ connues, ou du moins bien estimées.
 
-La fonctionnelle qu'on cherche à minimiser est :
 \begin{equation}
 \label{Eq-J_CEN}
 J(u)=\int_{\Omega}||\nabla u(x)||_{\epsilon}dx+\lambda\Big[\int_{\Omega}|I(x)-c_1|^2u(x)dx+
-\int_{\Omega}|I(x)-c_2|^2(1-u(x))dx\Big]
+\int_{\Omega}|I(x)-c_0|^2(1-u(x))dx\Big]
 \end{equation}
 L'équation qui définie notre algorithme est :
 \begin{equation}
 \label{Eq-CEN}
 	u_{k+1} =P_{\mathcal{A}}\Bigg(u_k+\tau \bigg(div\bigg(\frac{\nabla u_k}
-	{||\nabla u_k||_{\epsilon}}\bigg)-\lambda \big[(I-c_1)cv ^2-(I-c_2)^2\big]\bigg)\Bigg)\\
+	{||\nabla u_k||_{\epsilon}}\bigg)-\lambda \big[(I-c_1)cv ^2-(I-c_0)^2\big]\bigg)\Bigg)\\
 \end{equation}
 \subsection{Méthode de Chambol-Pock}
 \label{SS-Méthode CP}
@@ -64,9 +102,9 @@ La fonctionnelle dont on cherche un point selle est :
 \begin{eqnarray}
 \label{Eq-J_CP}
 		J(u,z)& =&\int_{\Omega}\nabla u(x)\cdot \textbf{z}dx+\lambda\Big[\int_{\Omega}|I(x)-c_1|^2u(x)dx+
-\int_{\Omega}|I(x)-c_2|^2(1-u(x))dx\Big]\\
+\int_{\Omega}|I(x)-c_0|^2(1-u(x))dx\Big]\\
 	&=& \int_{\Omega}u(x)div(\textbf{z})dx+\lambda\Big[\int_{\Omega}|I(x)-c_1|^2u(x)dx+
-\int_{\Omega}|I(x)-c_2|^2(1-u(x))dx\Big]
+\int_{\Omega}|I(x)-c_0|^2(1-u(x))dx\Big]
 \end{eqnarray}
 
 
