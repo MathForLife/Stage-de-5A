@@ -2,7 +2,7 @@ addpath(genpath('../'))
 load('Images/Masks','Masks');
 load('Images/Backgrounds','Backgrounds');
 
-%% Valeur de lambda à tester + var booléennes
+%% Valeur de lambda a tester + var booleennes
 lambda_CP=6; lambda_CEN=1;% lambda_histo=1.e2; %tester 6 et 1 pour 
 Im2Test=[1,2,3];
 
@@ -10,7 +10,7 @@ nbins=2;
 Import=true;
 Bruitage=false;
 
-%% Paramètres numériques
+%% Parametres numeriques
 itermax=200; cinconnu=false;
 mu=0.1; eps=1;
 theta=1;
@@ -29,7 +29,6 @@ Images={Image1,Image2,Image3};
 for i=Im2Test
     Images{i}=Image_Normalisation(Images{i},"2D");
 end
-
 %% Ajout de bruit aux images
 if Bruitage==true
     bruit=0.05;
@@ -40,7 +39,7 @@ if Bruitage==true
     end
 end
 
-% Importation des masques ou création de ces derniers
+% Importation des masques ou creation de ces derniers
 if ~Import
     for m=Mask2Change
         Masks{m}=roipoly(Images{m});
@@ -54,10 +53,10 @@ end
 
 %% Definition des figures
 f1=figure('Name','Resultat de la segmentation','NumberTitle','off');
-f2=figure('Name','Evolution des quantités de contrôle pour C-P','NumberTitle','off');
-f3=figure('Name','Evolution des quantités de contrôle pour C-E-N','NumberTitle','off');
-% f4=figure('Name','Evolution des quantités de contrôle pour les histogrammes','NumberTitle','off');
-% f5=figure('Name','Histogrammes des régions à segmenter','NumberTitle','off');
+f2=figure('Name','Evolution des quantitï¿½s de contrï¿½le pour C-P','NumberTitle','off');
+f3=figure('Name','Evolution des quantitï¿½s de contrï¿½le pour C-E-N','NumberTitle','off');
+% f4=figure('Name','Evolution des quantitï¿½s de contrï¿½le pour les histogrammes','NumberTitle','off');
+% f5=figure('Name','Histogrammes des rï¿½gions ï¿½ segmenter','NumberTitle','off');
 
 %% Boucle sur les images
 iter=0;

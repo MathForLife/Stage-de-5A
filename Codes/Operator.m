@@ -1,12 +1,11 @@
-function result=Operator(g,u,T)
-    
-    sz=size(g);
-    if T
-        g=reshape(g,[],sz(end));
-        g=g*u;
-        sz(end)=[];
-        result=reshape(g,sz);
+function result=Operator(Hist,Var,Transpose)
+    % Hist est la matrice de dimension [m*n,nbins] reresentant l'operateur A ou B
+    % Si Transpose==True alors la variable est une des variables duales q2
+    % ou q3
+    % Au contraire, si Transpose==False alors la variable consideree est la
+    % variable primale u
+    if Transpose
+        result=Hist'*Var;
     else
-        result=sum(sum(u.*g,1),2);
-        result=reshape(result,sz(end),1);
+        result=Hist*Var;
     end

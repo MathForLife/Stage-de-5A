@@ -1,6 +1,6 @@
  function [g0,g1,Tau,Sigma_1,Sigma_2,Sigma_3,b]=create_histo(Image,Mask1,Mask0,Nbins,epsilon,PlotOptions)
-%% Creation des quantités nécessaires à l'algorithme de segmentation par histogrammes
-%
+% Creation des quantités nécessaires à l'algorithme de segmentation par
+% histogrammes
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUTS :
 % Image: Image en 2D ou en 3D et normalisée en nuances de gris sur laquelle on souhaite faire la segmentation 
@@ -9,12 +9,11 @@
 % Nbins: Nombre de bins que l'on souhaite prendre en compte dans les histogrammes
 %     -1: nbins de l'histogramme h1
 %     -2: nbins de l'histogramme h0
-% epsilon: Paramètre de régularisation des conditions sur Sigma_2, Sigma_3 et Tau (epsilon>0)
+epsilon: Paramètre de régularisation des condit
 % PlotOptions: Contient des informations sur l'affichage des histogramme (passage par une fonction Matlab)
 %     -1: axe de l'histogramme h1
 %     -2: axe de l'histogramme h0
 %     -3: visibilité de l'histogramme (on/off)
-%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % OUTPUTS :
 % g0, g1: quantités associées aux histogrammes h0 et h1 et définies comme g_i(x,\lambda)=Ind_{I(x)==\lambda}-h_i(\lambda)
@@ -53,7 +52,7 @@ end
 g1=reshape(g1,Nbins(1),m*n);
 g0=reshape(g0,Nbins(2),m*n);
 
-Sigma_1=1/(epsilon+4);
+Sigma_1=1/4;
 Sigma_2=1./(epsilon+sum(g1,2));
 Sigma_3=1./(epsilon+sum(g0,2));
 

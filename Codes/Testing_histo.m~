@@ -68,7 +68,7 @@ if strcmp(SelectMethod{MethSelect},'Histogrammes')
     PlotOptions={ax1,ax2,visibility};
     StopConditions=[itermax,stop_u,stop_J];
     Parameters=[mu, beta, theta, epsilon];
-    [ub,J, err_u,err_J,niter]=histo_bis(Image,Mask,Background,Nbins,lambda,Parameters,PlotOptions,StopConditions);
+    [ub,J, err_u,err_J,niter]=histo_bis(Image,Mask,Background,Nbins,lambda,Parameters,PlotOptions,StopCondition)
 %     [g0,g1,T,sigma_1,sigma_2,sigma_3,b]=create_histo(Image,Mask,Background,Nbins,epsilon,PlotOptions);
 %     
 %     tic

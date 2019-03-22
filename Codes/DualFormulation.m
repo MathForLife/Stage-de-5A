@@ -47,7 +47,7 @@ function [ub, J, err_u,err_J, niter]=DualFormulation(Image, u0, lambda, mu, tho_
         niter=niter+1;
         
         uold=u; z1old=z1; z2old=z2;
-        % Dans le cas où les images sont bruitées, supposer c1 et c2 connus est faux
+        % Dans le cas oï¿½ les images sont bruitï¿½es, supposer c1 et c2 connus est faux
         if cinconnu
             c1=sum(sum(Image.*uold))/sum(sum(uold));
             c2=sum(sum(Image.*(1-uold)))/sum(sum(1-uold));
@@ -71,7 +71,7 @@ function [ub, J, err_u,err_J, niter]=DualFormulation(Image, u0, lambda, mu, tho_
         
         ub=u>mu;
         
-        % Calcul de l'énergie avec un terme de lissage nul
+        % Calcul de l'energie avec un terme de lissage nul
         J(niter)=compute_energy_smooth(ub,I1,I2,lambda,0);
         
         % Calcul des erreurs
@@ -82,7 +82,7 @@ function [ub, J, err_u,err_J, niter]=DualFormulation(Image, u0, lambda, mu, tho_
             
             u=uold; z1=z1old; z2=z2old;
             tho_u=tho_u/2; tho_z=2*tho_z;
-            fprintf('\tho_u= %f, \tho_z= %f, niter=%d\n',tho_u,tho_z,niter)
+            %fprintf('\tho_u= %f, \tho_z= %f, niter=%d\n',tho_u,tho_z,niter)
         else
             err_u(niter)=cond_u;
             err_J(niter)=cond_J;

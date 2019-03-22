@@ -11,7 +11,7 @@ function [ub, J, err_u,err_J, niter]=ChanEsedogluNikolova(Image, u0, lambda, mu,
     I2=(Image-c2).^2;
     
     J(niter)=compute_energy_smooth(u0,I1,I2,lambda,eps);
-    %% Première itération
+    %% Premiï¿½re itï¿½ration
     niter=2;
     
     ux=gradx(uold);
@@ -61,7 +61,7 @@ function [ub, J, err_u,err_J, niter]=ChanEsedogluNikolova(Image, u0, lambda, mu,
             
             u=uold;
             tho=tho/2;
-            fprintf('\tho= %5.3f, niter=%d\n',tho,niter)
+            %fprintf('\tho= %5.3f, niter=%d\n',tho,niter)
         else
             err_u(niter)=cond_u;
             err_J(niter)=cond_J;
