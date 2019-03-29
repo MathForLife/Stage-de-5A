@@ -1,78 +1,92 @@
-addpath(genpath('../'))
-load('Images/Masks','Masks');
-load('Images/Regions','Regions');
-load('Images/Backgrounds','Backgrounds');
+clear all; close all;
 
-%% Importation des gold standards + var bool�ennes
-load('Gold_Standards.mat');
-Import=true;
+filename={'Square','GeometricShape','Coins','BrainTumor','BrainTumorDetail','BrainHole','Lung'};
+extension='.png'; addpath('../Images/');
+
+%% Choix des images sur lesquelles entrainer les algos + importation des masques
+Im2Train=[1,2,3]; Im2Reg=4:7; 
+Images={}; Foregrounds={}; Backgrounds={}; Regions={}; Gold_Standards={};
+disp('Importation des images et des masques')
+for im=Im2Train
+    Images{im}=imread([filename{im},extension]);
+    load(['Foregrounds/',filename{im},'_FG.mat'],'FG');
+    Foregrounds{im}=FG;
+    load(['Backgrounds/',filename{im},'_BG.mat'],'BG');
+    Backgrounds{im}=BG;
+    if ismember(im,Im2Reg)
+        load(['Regions/',filename{im},'_Region.mat'],'R');
+        Regions{im}=R;
+    end    
+    load(['Gold_Standards/',filename{im},'_GS.mat'],'GS');
+    Gold_Standards{im}=GS;
+end
+
+%% Possibilite de modifier les masque d'initialisation en indiquant les numero des images correspondant au masque
+ChangeMasks=false;
+Mask2Change=[1,2,3]; Background2Change=[1,2,3]; Region2Change=3;
+
+%% Initialisation des parametres du test de Sorensen-Dice
+disp('Initialisation des parametres ')
+pow_min=1; pow_max=1; pow_step=1;
 Log_scale=true;
 
-Mask2Change=[1,2,3]; Background2Change=[1,2,3]; Region2Change=3;
-Im2Train=[1]; 
-
-%% Initialisation des param�tres pour le test de S�rensen-Dice
-pow_min=-5; pow_max=5; pow_step=1;
-Nbins=[2,5,10,15,20];
+NbinsF=[2,4]; NbinsB=[2,4];
 
 pow_length=length(pow_min:pow_step:pow_max);
-bins_length=length(Nbins);
+bins_length=length(NbinsF); nbIm=length(Im2Train);
 
 Lambda=nan(1,pow_length);
-Dice_Histo=nan(3,bins_length,pow_length);
-Times=nan(3,bins_length,pow_length);
-
-%% Param�tres num�riques
+Dice_Histo=nan(nbIm,bins_length,pow_length);
+Times=nan(nbIm,bins_length,pow_length);
+%% Parametres numeriques (se referer au programme HostogrammeSegmentation pourle detail de ces parametres)
 itermax=200; 
-mu=0.1; beta=0.5; theta=0;
-stop_1=1.e-6; stop_2=1.e-6;
+mu=0.5; beta=0.5; theta=1; epsilon=1;
+stop_u=-1.e-6; stop_J=-1.e-6;
 
-% Arguments utilis�s pour voir les histogrammes 
-fig=figure('Name','Histogramme des r�gions � segmenter','NumberTitle','off');
-hist_visibility='off';
+% Arguments utilises pour voir les histogrammes 
+fig=figure('Name','Histogramme des regions a segmenter','NumberTitle','off');
+hist_visibility='on';
 
-%% Lecture des images
-Image1=zeros(248);
-Image1(62:186,62:186)=255;
-Image2=double(imread('eight.tif'));
-Image3=double(imread('TumeurCerveaubis.png'));
-
-NbImages=length(Im2Train);  %Nombre d'images test�es
-TumeurBis=3; %Num�ro de l'image contenant le d�tail de la tumeure
-Images={Image1,Image2,Image3};
 %% Normalisation des images
+disp('Normalisation des images')
 for im=Im2Train
     Images{im}=Image_Normalisation(Images{im},"2D");
 end
 
-% Importation des masques ou cr�ation de ces derniers
-if ~Import
-    for m=Mask2Change
-        fprintf("Choisissez la r�gion � segmenter sur l'image %d\n",m);
-        Masks{m}=roipoly(Images{m});
+%% Creation de nouveaux masques 
+if ChangeMasks
+    disp('Modification des masques initiaux')
+    for f=Foreground2Change
+        fprintf("Choisissez la region a segmenter sur l'image %d\n",f);
+        Foregrounds{f}=roipoly(Images{f});
     end
     close;
     
     for b=Background2Change
-        fprintf("Choisissez un �l�ment de fond de l'image %d\n",b);
+        fprintf("Choisissez un element de fond de l'image %d\n",b);
         Backgrounds{b}=roipoly(Images{b});
     end
     close;
     
     for r=Region2Change
-        fprintf("Choisissez la r�gion de la radio � comperer avec le gold standard\n");
+        fprintf("Choisissez la region de la radio a comparer avec le gold standard\n");
         Regions{r}=roipoly(Images{r});
     end
     close;
 end
 
-fprintf('%d it�rations pr�vues\n',pow_length);
+fprintf('%d iterations prevues\n',pow_length);
 iter=0;
 
-%% Boucle des lambdas
-
+%% Creation des figures 
 figure(fig);
 ax1=subplot(2,1,1); ax2=subplot(2,1,2);
+
+PlotOptions={ax1,ax2,hist_visibility};
+StopConditions=[itermax,stop_u,stop_J];
+Parameters=[mu, beta, theta, epsilon];
+
+%% Boucle des lambdas
 for ind=pow_min:pow_step:pow_max
     if Log_scale
         lambda=10^ind;
@@ -80,38 +94,43 @@ for ind=pow_min:pow_step:pow_max
         lambda=ind;
     end
     iter=iter+1;
-    fprintf("D�but de l'it�ration %d\n",iter);
+    fprintf("Debut de l'iteration %d\n",iter);
     
     Lambda(iter)=lambda;
     
     %% Boucles des images + nombres de bins dans l'histogramme
     for im=Im2Train
-        for nb=1:bins_length
-            [g0,g1,T,sigma_1,sigma_2,sigma_3,b]=create_histo(Images{im},Masks{im},Backgrounds{im},Nbins(nb),ax1,ax2,hist_visibility);
-            
+        for nb=1:bins_length     
+            Nbins=[NbinsF(nb),NbinsB(nb)];
             tic
-            [Ub_Histo,~, ~,~, ~]=histo_loco(double(Masks{im}),g0,g1,b,T,sigma_1,sigma_2,sigma_3,lambda,mu,beta,theta,stop_1,stop_2,itermax);
+            [Ub_Histo,~,~,~,~]=HistogrammeSegmentation(Images{im},Foregrounds{im},Backgrounds{im},Nbins,lambda,Parameters,PlotOptions,StopConditions);
             Times(im,nb,iter)=toc;
             
-            if im==TumeurBis
-                Ub_Histo=Ub_Histo & Regions{TumeurBis};
+            if ismember(im,Im2Reg)
+                Ub_Histo=Ub_Histo & Regions{im};
             end
-            Dice_Histo(im,nb,iter)=dice(Ub_Histo,Gold_Standards{im});
+%             figure(2);
+%             subplot(141); imshow(Gold_Standards{im});
+%             subplot(142); imshow(Ub_Histo_temp);
+%             subplot(143); imshow(Ub_Histo);
+%             subplot(144); imshow(Regions{TumeurBis});
+            
+            Dice_Histo(im,nb,iter)=SorensenDice(Ub_Histo,Gold_Standards{im});
         end
-        fprintf("fin de l'it�ration %d.%d\n",iter,im);
+        fprintf("fin de l'iteration %d.%d\n",iter,im);
     end
 end
-close(fig);
+%close(fig);
 
-%% Affichage des r�sultats des tests de S�rensen-Dice
-f1=figure('Name','Resultats des tests de S�rensen-Dice','NumberTitle','off');
-f2=figure('Name','Etude du temps de calcul','NumberTitle','off');
-f3=figure('Name','Images','NumberTitle','off');
+%% Affichage des resultats des tests de Sorensen-Dice
+f1=figure('Name','Resultats des tests de Sorensen-Dice','NumberTitle','off');
+%f2=figure('Name','Etude du temps de calcul','NumberTitle','off');
+f2=figure('Name','Images','NumberTitle','off');
 
-%% Cr�ation de la l�gende 
+%% Creation de la legende 
 leg={};
 for nb=1:bins_length
-    leg{nb}=['n',num2str(nb),' = ',num2str(Nbins(nb)),' bins'];
+    leg{nb}=['n',num2str(nb),' = ',num2str(NbinsF(nb)),' bins'];
 end
 leg=reshape(leg,bins_length,1);
 
@@ -120,7 +139,7 @@ for im=Im2Train
     iter=iter+1;
     figure(f1);
     
-    subplot(1,NbImages,iter);
+    subplot(2,NbImages,iter);
     Dice=reshape(Dice_Histo(im,:,:),bins_length,pow_length);
     if Log_scale
         semilogx(Lambda,Dice);
@@ -132,13 +151,12 @@ for im=Im2Train
     xlabel('\lambda');
     ylabel('Dice index');
     if im==ceil(NbImages/2)
-        title({"Evolution de l'indice de Dice fonction du param�tre \lambda";['Image ',num2str(im)]});
+        title({"Evolution de l'indice de Dice en fonction du parametre \lambda";['Image ',num2str(im)]});
     else
         title(["Image ",num2str(im)]);
     end
     
-    figure(f2)
-    subplot(1,NbImages,iter);
+    subplot(2,NbImages,iter+NbImages);
     t=reshape(Times(im,:,:),bins_length,pow_length);
     if Log_scale
         semilogx(Lambda,t);
@@ -150,16 +168,16 @@ for im=Im2Train
     ylabel('t');
     xlabel('\lambda');
     if im==ceil(NbImages/2)
-        title({'Evolution du temps de calcul en fonction du param�tre \lambda';['Image ',num2str(im)]});
+        title({'Evolution du temps de calcul en fonction du parametre \lambda';['Image ',num2str(im)]});
     else
         title(["Image ",num2str(im)]);
     end
     
-    figure(f3)
+    figure(f2)
     subplot(1,NbImages,iter)
     imshow(Images{im});
     hold on
-    contour(Masks{im},'r','Linewidth',3);
+    contour(Foregrounds{im},'r','Linewidth',3);
     contour(Backgrounds{im},'g','Linewidth',3);
     hold off
      if im==ceil(NbImages/2)

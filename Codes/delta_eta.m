@@ -1,5 +1,14 @@
 function dn=delta_eta(z,eta,n)
-    if n==1
+%% Fonction de Dirac regularisee 
+% INPUTS :
+% z : vecteur (ou matrice) de discretisation de l'espace
+% eta : parametre de lissage 
+% n : entier indiquant le lissage a prendre en compte (peut prendre les valeurs 1 et 2) 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% OUTPUT :
+% dn : valeur de la fonction de Dirac sur l'espace discretise
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if n==1
         dn=zeros(size(z));
         
         cond=abs(z)<=eta;

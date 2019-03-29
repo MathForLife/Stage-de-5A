@@ -1,10 +1,15 @@
 function n=norm_grad(nabla_u)
-% Calcul la norme d'un vecteur nabla_u
-%
-% nabla_u est une matrice dont la i-ème colonnes est la coordonnées du champs de vecteur
-% calculé sur tout l'espace
-% ex : si nabla_u=grad_mat(u) alors la coordonnée (nabla_u)_{i,j} représente la j-ème dérivée 
-% de la fonction u étudiée au point x_i. Dans ce cas, u a été vectorisée 
+%% Calcul la norme d'un vecteur nabla_u
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% INPUT :
+% nabla_u : matrice dont les lignes correspondent aux points de l'espace etudie 
+% et les colonnes correpondent aux valeur du champs dans les differentes directions de l'espace
+% (ex : si nabla_u=grad_mat(u) alors la coordonnée (nabla_u)_{i,j} représente la j-ème dérivée 
+% de la fonction u étudiée au point x_i)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% OUTPUT : 
+% n : vecteur colonne contenant la norme 2 du champ nabla_u en chaque point de l'espace etudie
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dim=size(nabla_u,2);
 if dim==2
     n=sqrt(nabla_u(:,1).^2+nabla_u(:,2).^2);

@@ -1,8 +1,16 @@
 function nabla_u=grad_mat(u,sz)
-%% u est défini sur \Omega, mais écrit sous forme d'un vecteur 
+%% Calcul du gradient d'une image 2D ou 3D
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% INPUTS :
+% u : masque défini sur \Omega, mais écrit sous forme d'un vecteur 
 % Les dimension de l'image originale sont contenues dans le vecteur sz
 % Si l'image est en 3D alors sz possède 3 coordonnées représantant les dimension de l'image selon chaque axe
 % On suppose ne travailler qu'avec des images en niveau de gris
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% OUTPUT:
+% nabla_u : gradient du masque u calcule par differences finies avec conditions de Dirichlet 
+% Chaque ligne est correspond a un point de l'espace et chaque colonne a une direction d'etude de la derivee
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dim=length(sz);
 vect_length=length(u);
 
