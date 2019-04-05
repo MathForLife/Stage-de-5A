@@ -3,21 +3,20 @@ function SDC=SorensenDice(X,Y)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUTS :
 % X,Y : masques binaires
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % OUTPUT :
 % SDC : Indice de Sorensen-Dice definit comme \frac{|X & Y|}{|X|+|Y|}
 
-sx=size(X);
-dim=length(sx);
-
-if dim==2
-    vect_length=sx(1)*sx(2);
-elseif dim==3
-    vect_length=sx(1)*sx(2)*sx(3);
+sx=size(X); sy=size(Y);
+if ~isequal(sx,sy)
+    fprintf('Dim %d : masque X = %d  masque Y = %d \n',[1:2;sx;sy]);
+    error('Les masques ne sont pas de dimension egales');
+else
+    dim=length(sx);
+    if dim==2
+        SDC=sum(sum(X & Y,1),2)/sum(sum(X | Y,1),2);
+    elseif dim==3
+        SDC=sum(sum(sum(X & Y,1),2),3)/sum(sum(sum(X | Y,1),2),3);
+    end 
 end
-
-X_temp=reshape(X,vect_length,1);
-Y_temp=reshape(Y,vect_length,1);
-
-SDC=2*sum(X_temp & Y_temp)/(sum(X_temp)+sum(Y_temp));
 end

@@ -1,4 +1,4 @@
-function [ub,J, err_u,err_J,niter]=HistogrammeSegmentation(Image,Foreground,Background,Nbins,lambda,Parameters,PlotOptions,StopCondition)
+function [ub,J, err_u,err_J,niter]=HistogrammeSegmentation(Image,Foreground,Background,Nbins,Cumulative,lambda,Parameters,PlotOptions,StopCondition)
 %% Algorithme de segmentation par histogrammes inspire des travaux de R.Yildizoglu, J-F Aujol, N.Papadakis
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUTS:
@@ -8,6 +8,7 @@ function [ub,J, err_u,err_J,niter]=HistogrammeSegmentation(Image,Foreground,Back
 % Nbins: Nombre de bins que l'on souhaite prendre en compte dans les histogrammes
 %     -1: nbins de l'histogramme h1
 %     -2: nbins de l'histogramme h0
+% Cumulative : Booleen permettant de choisir la methode des histogrammes cumules ou la version normale
 % lambda: Paramètre de controle entre attache aux donnees et regularisation sur la fonction J a minimiser
 % Parameters: Ensemble de paramètres numeriques 
 %     -1 mu: Seuil utilise pour le calcul du masque binaire u_b=H(u-\mu)
@@ -34,7 +35,7 @@ function [ub,J, err_u,err_J,niter]=HistogrammeSegmentation(Image,Foreground,Back
 itermax=StopCondition(1);
 mu=Parameters(1); beta=Parameters(2);theta=Parameters(3); epsilon=Parameters(4);
 % Creation des histogrammes
-[A,B,Tau,Sigma_1,Sigma_2,Sigma_3,b]=create_histo(Image,Foreground,Background,Nbins,epsilon,PlotOptions);
+[A,B,Tau,Sigma_1,Sigma_2,Sigma_3,b]=create_histo(Image,Foreground,Background,Nbins,Cumulative,epsilon,PlotOptions);
 % Calcul de la dimension de l'image pour sa vectorisation
 sz=size(Image);
 dim=length(sz);
@@ -80,16 +81,16 @@ while (niter<itermax && cond_u>StopCondition(2) && cond_J>StopCondition(3))
     
     u_old=u;
     % Iteration sur la variable primale
-    figure(3); 
-    subplot(141); imagesc(reshape(u,sz)); axis off; axis image;
+    %figure(5); 
+    %subplot(141); imagesc(reshape(u,sz)); axis off; axis image;
     u=u+Tu.*(div_mat(Q1,sz)-A'*Q2+B'*Q3);
-    subplot(142); imagesc(reshape(u,sz)); axis off; axis image;
+    %subplot(142); imagesc(reshape(u,sz)); axis off; axis image;
     u=min(max(u,0),1);
-    subplot(143); imagesc(reshape(u,sz)); axis off; axis image;
+    %subplot(143); imagesc(reshape(u,sz)); axis off; axis image;
     ub=u>mu;
     
     u_tilde=u+theta*(u-u_old);
-    subplot(144); imagesc(reshape(u_tilde,sz)); axis off; axis image;
+    %subplot(144); imagesc(reshape(u_tilde,sz)); axis off; axis image;
     
     % Iteration sur la première variable duale
     Q1=Q1+S1*grad_mat(u_tilde,sz);
@@ -108,13 +109,13 @@ while (niter<itermax && cond_u>StopCondition(2) && cond_J>StopCondition(3))
     cond_u=norm(u-u_old)/norm(u_old);
     cond_J=abs(J(niter)-J(niter-1))/abs(J(niter-1));
 
-    if J(niter)>J(niter-1)
+    if J(niter)>2*J(niter-1)
         % Si la fonctionnelle augmente, on divise le pas par 2 et on recommence l'iteration
         fprintf('J= %f, niter= %d\n',J(niter),niter)
         niter=niter-1; k=k+1;
         
         u=u_old;
-        Tu=Tu/2; S1=S1*2; S2=S2*2; S3=S3*2;
+        Tu=Tu/2; S1=S1/2; S2=S2/2; S3=S3/2;
     else
         % Sinon, on accepte la nouvelle iteration et on reinitialise les pas 
         Tu=Tau; S1=Sigma_1; S2=Sigma_2; S3=Sigma_3;

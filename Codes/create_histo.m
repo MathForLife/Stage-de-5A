@@ -1,4 +1,4 @@
-function [A,B,Tau,Sigma_1,Sigma_2,Sigma_3,b]=create_histo(Image,Foreground,Background,Nbins,epsilon,PlotOptions)
+function [A,B,Tau,Sigma_1,Sigma_2,Sigma_3,b]=create_histo(Image,Foreground,Background,Nbins,Cumulative,epsilon,PlotOptions)
 %% Creation des quantites necessaires a l'algorithme de segmentation par histogrammes
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUTS :
@@ -8,6 +8,7 @@ function [A,B,Tau,Sigma_1,Sigma_2,Sigma_3,b]=create_histo(Image,Foreground,Backg
 % Nbins: Nombre de bins que l'on souhaite prendre en compte dans les histogrammes
 %     -1: nbins de l'histogramme h1
 %     -2: nbins de l'histogramme h0
+% Cumulative : Booleen permettant de choisir la methode des histogrammes cumules ou la version normale
 % epsilon: Paramètre de regularisation des conditions sur Sigma_2, Sigma_3 et Tau (epsilon>0)
 % PlotOptions: Contient des informations sur l'affichage des histogramme (passage par une fonction Matlab)
 %     -1: axe de l'histogramme h1
@@ -27,10 +28,14 @@ function [A,B,Tau,Sigma_1,Sigma_2,Sigma_3,b]=create_histo(Image,Foreground,Backg
 %% Debut algo
 [m,n,p]=size(Image);
 
-h1=histogram(PlotOptions{1},Image(Foreground),'NumBins',Nbins(1),'BinLimits',[0,1],'Normalization','probability','Visible',PlotOptions{3});
+if Cumulative
+    h1=histogram(PlotOptions{1},Image(Foreground),'NumBins',Nbins(1),'BinLimits',[0,1],'Normalization','cdf','Visible',PlotOptions{3});
+    h0=histogram(PlotOptions{2},Image(Background),'NumBins',Nbins(2),'BinLimits',[0,1],'Normalization','cdf','Visible',PlotOptions{3});
+else
+    h1=histogram(PlotOptions{1},Image(Foreground),'NumBins',Nbins(1),'BinLimits',[0,1],'Normalization','probability','Visible',PlotOptions{3});
+    h0=histogram(PlotOptions{2},Image(Background),'NumBins',Nbins(2),'BinLimits',[0,1],'Normalization','probability','Visible',PlotOptions{3});
+end
 title(PlotOptions{1},'Histogramme de la region a segmenter : h^1');
-
-h0=histogram(PlotOptions{2},Image(Background),'NumBins',Nbins(2),'BinLimits',[0,1],'Normalization','probability','Visible',PlotOptions{3});
 title(PlotOptions{2},'Histogramme du fond h^0');
 
 %% Initialisation des operateurs A et B
@@ -42,19 +47,19 @@ end
 
 %% Boucle sur les bins de h1
 for lambda= 1:Nbins(1)
-    if p>1
-        A(lambda,:,:,:)= double((Image>=h1.BinEdges(lambda))&(Image<=h1.BinEdges(lambda+1)))-h1.Values(lambda);
+    if Cumulative
+        A(lambda,:,:,:)= double(Image<=h1.BinEdges(lambda+1))-h1.Values(lambda);
     else
-        A(lambda,:,:)= double((Image>=h1.BinEdges(lambda))&(Image<=h1.BinEdges(lambda+1)))-h1.Values(lambda);
+        A(lambda,:,:,:)= double((Image>=h1.BinEdges(lambda))&(Image<=h1.BinEdges(lambda+1)))-h1.Values(lambda);
     end
     
 end
 %% Boucle sur les bins de h0
 for lambda=1:Nbins(2)
-    if p>1
-        B(lambda,:,:,:)= double((Image>=h0.BinEdges(lambda))&(Image<=h0.BinEdges(lambda+1)))-h0.Values(lambda);
+    if Cumulative
+        B(lambda,:,:,:)= double(Image<=h0.BinEdges(lambda+1))-h0.Values(lambda);
     else
-        B(lambda,:,:)= double((Image>=h0.BinEdges(lambda))&(Image<=h0.BinEdges(lambda+1)))-h0.Values(lambda);
+        B(lambda,:,:,:)= double((Image>=h0.BinEdges(lambda))&(Image<=h0.BinEdges(lambda+1)))-h0.Values(lambda);
     end
 end
 

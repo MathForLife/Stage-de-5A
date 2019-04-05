@@ -139,7 +139,7 @@ load('Images/Masks','Masks');
 % end
 %% Normalisation des differents masques
 filename={'Square','GeometricShape','Coins','BrainTumor','BrainTumorDetail','BrainHole','Lung'};
-Im2Def=1:7;
+Im2Def=3;
 Foregrounds={};
 Backgrounds={};
 Regions={}; %a=figure; b=figure; c=figure;
@@ -171,7 +171,7 @@ for i=Im2Def
     GS=double(imread(['Gold_Standards/',filename{i},'_GS.png']));
     GS=Image_Normalisation(GS,'2D');
     GS(GS<1)=0; GS=logical(GS);
-    save(['../Images/Gold_Standards/',filename{i},'_BG.mat'],'BG');
+    save(['../Images/Gold_Standards/',filename{i},'_GS.mat'],'GS');
     if strcmp(filename{i},'Coins')
         FG=double(imread(['Foregrounds/',filename{i},'_FG_Glob.png']));
         FG=Image_Normalisation(FG,'2D');

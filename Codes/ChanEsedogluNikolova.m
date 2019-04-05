@@ -1,12 +1,13 @@
-function [ub, J, err_u,err_J, niter]=ChanEsedogluNikolova(Image, u0, lambda, mu, tho, epsilon, Colors, StopConditions)
+function [ub, J, err_u,err_J, niter]=ChanEsedogluNikolova(Image, u0, lambda, Parameters, Colors, StopConditions)
 %% Algorithme de Chan-Esedoglu-Nikolova calculant un masque binaire de segmentation
 % INPUTS:
 % Image: Image que l'on cherche à segmenter en 2 régions. L'image est en nuances de gris et peut etre en 2D ou en 3D 
 % u0 : Masque représentant une partie de la zone que l'on souhaite segmenter. Il est possible de faire une union de masques
 % lambda: Parametre de controle entre attache aux donnees et regularisation sur la fonction J à minimiser
-% mu: Seuil utilise pour le calcul du masque binaire u_b=H(u-\mu)
-% tho : Pas initial de l'algorithme de gradient projete
-% epsilon: Paramètre de lissage pour le calcul de la norme 
+% Parameters: Contient des informations propres a l'implementation numerique de CEN
+%     -1 tho : Pas initial de l'algorithme de gradient projete
+%     -2 mu : Seuil utilise pour le calcul du masque binaire u_b=H(u-\mu)
+%     -3 epsilon :  Parametre de lissage pour le calcul de la norme 
 % Colors: Contient des informations sur les parametres de couleurs donnes utilises pour la minimisation
 %     -1 c1 : couleur moyenne de la region a segmenter
 %     -2 c2 : couleur moyenne du fond de l'image
@@ -26,6 +27,7 @@ function [ub, J, err_u,err_J, niter]=ChanEsedogluNikolova(Image, u0, lambda, mu,
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Debut algo
 itermax=StopConditions(1); c1=Colors(1); c2=Colors(2);
+tho=Parameters(1); mu=Parameters(2); epsilon=Parameters(3);
 %% Initialisation de toutes les variables
 niter=1; 
 % Variable interne permettant d'eviter les boucles infinies quand les conditions d'arret ne sont pas realisables
@@ -36,7 +38,7 @@ err_u=nan(1,itermax);
 err_J=nan(1,itermax);
 J=nan(1,itermax);
 
-u=u0;
+u=double(u0);
 
 I1=(Image-c1).^2;
 I2=(Image-c2).^2;
@@ -78,6 +80,7 @@ while (niter<itermax && cond_u>StopConditions(2)&& cond_J>StopConditions(3))
     
     if J(niter)>J(niter-1)
         % Si la fonctionnelle augmente, on divise le pas par 2 et on recommence l'iteration
+        fprintf('J= %f, niter= %d\n',J(niter),niter)
         niter=niter-1; k=k+1;
         
         u=uold;

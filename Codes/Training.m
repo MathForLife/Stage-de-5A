@@ -1,67 +1,44 @@
 clear all; close all;
 
-addpath(genpath('../'))
-load('Images/Masks','Masks');
-load('Images/Regions','Regions');
+filename={'Square','GeometricShape','Coins','BrainTumor','BrainTumorDetail','BrainHole','Lung'};
+extension='.png'; addpath(genpath('../Images/'));
+%% Choix des images sur lesquelles entrainer les algos + importation et modification des masques
+Im2Train=[1,2]; 
+ImWithRegion=4:7; 
 
-%% Importation des gold standards + var bool�ennes
-load('Gold_Standards.mat');
-Import=true;
-Log_scale=false;
+ChangeMasks=false;
+Foreground2Change=[1,2,3]; Background2Change=[1,2,3]; Region2Change=3;
 
-Mask2Change=[1,2,3]; Background2Change=[1,2,3]; Region2Change=3;
-Im2Train=[2]; 
-%% Initialisation des param�tres pour le test de S�rensen-Dice
-pow_min=1; pow_max=10; pow_step=1;
+[Images, Foregrounds, Backgrounds,Regions,Gold_Standards]=ImportImageMasks(filename,extension,Im2Train,ImWithRegion,ChangeMasks,Foreground2Change,Background2Change,Region2Change);
+%% Initialisation des parametres pour le test de Serensen-Dice
+fprintf('Initialisation des parametres numeriques\n');
+pow_min=-10; pow_max=10; pow_step=1;
+Log_scale=true;
 
-pow_length=round(abs(pow_max-pow_min)/pow_step+1);
-Lambda=nan(1,pow_length);
+pow_length=length(pow_min:pow_step:pow_max);
+Lambda=nan(1,pow_length); NbImages=length(Im2Train);
 
 Dice_CV=nan(3,pow_length);
 Dice_CP=nan(3,pow_length);
 Dice_CEN=nan(3,pow_length);
 Time=nan(3,3,pow_length);
 
-%% Param�tres num�riques
-itermax=200; cinconnu=false;
-mu=0.5; eps=1;
-theta=1; beta=0.5;
-order=2; eta=1; n=10; % paramètres num. de CV
-tho_u=0.5; tho_z=0.25;
-stop_1=-1.e-6; stop_2=-1.e-6;
-hist_visibility='off';
+%% Parametres numeriques
+itermax=500; cinconnu=false;
+stop_1=1.e-8; stop_2=1.e-8;
+StopConditions=[itermax, stop_1, stop_2];
+
+order=2; eta=1; n=10; epsilon=1;
+ParametersCV=[n,order,eta,epsilon];
+
+mu=0.5; tho=1/16;
+ParametersCEN=[tho,mu,epsilon];
+
+theta=1; tho_u=0.25; tho_z=0.25;
+ParametersCP=[tho_u,tho_z, mu, theta];
 
 
-%% Lecture des images
-Image1=zeros(248);
-Image1(62:186,62:186)=255;
-Image2=double(imread('eight.tif'));
-Image3=double(imread('TumeurCerveaubis.png'));
-
-NbImages=length(Im2Train);  %Nombre d'images test�es
-TumeurBis=3; %Num�ro de l'image contenant le d�tail de la tumeure
-Images={Image1,Image2,Image3};
-%% Normalisation des images
-for i=Im2Train
-    Images{i}=Image_Normalisation(Images{i},"2D");
-end
-
-% Importation des masques ou cr�ation de ces derniers
-if ~Import
-    for m=Mask2Change
-        fprintf("Choisissez la r�gion � segmenter sur l'image %d\n",m);
-        Masks{m}=roipoly(Images{m});
-    end
-    close;
-    
-    for r=Region2Change
-        fprintf("Choisissez la r�gion de la radio � comperer avec le gold standard\n");
-        Regions{r}=roipoly(Images{r});
-    end
-    close;
-end
-
-fprintf('%d it�rations pr�vues\n',pow_length);
+fprintf('%d iterations prevues\n',pow_length);
 iter=0;
 
 %% Boucle des lambdas
@@ -72,51 +49,52 @@ for ind=pow_min:pow_step:pow_max
         lambda=ind;
     end
     iter=iter+1;
-    fprintf("D�but de l'it�ration %d\n",iter);
+    fprintf("Debut de l'iteration %d\n",iter);
     
     Lambda(iter)=lambda;
     %% Boucle sur les images
-    for i=Im2Train
-        c1=mean(Images{i}(Masks{i})); c2=mean(Images{i}(~Masks{i}));
+    for im=Im2Train
+        c1=mean(Images{im}(Foregrounds{im})); c2=mean(Images{im}(~Foregrounds{im}));
+        Colors=[c1,c2,cinconnu];
         
         tic
-        [Ub_CV, J_CV, err_u,err_J, Niter_CV]=ChanVese(Images{i}, double(Masks{i}), lambda, eps, eta,stop_1,stop_2,c1,c2, cinconnu, n, order, itermax);
+        [Ub_CV, J_CV, err_u,err_J, Niter_CV]=ChanVese(Images{im}, Foregrounds{im}, lambda,  ParametersCV, Colors, StopConditions);
         t1=toc;
         
         tic
-        [Ub_CP, ~, ~,~, ~]=DualFormulation(Images{i}, double(Masks{i}), lambda, mu, tho_u, theta, tho_z,stop_1,stop_2, c1, c2, cinconnu, itermax);
-        t3=toc;
-        
-        tic
-        [Ub_CEN, ~, ~,~, ~]=ChanEsedogluNikolova(Images{i}, double(Masks{i}), lambda, mu, tho_u, eps, stop_1, stop_2, c1, c2, cinconnu, itermax);
+        [Ub_CEN, ~, ~,~, ~]=ChanEsedogluNikolova(Images{im}, Foregrounds{im}, lambda, ParametersCEN, Colors, StopConditions);
         t2=toc;
         
-        Time(i,:,iter)=[t1,t2,t3];
+        tic
+        [Ub_CP, ~, ~,~, ~]=DualFormulation(Images{im}, Foregrounds{im}, lambda, ParametersCP, Colors, StopConditions);
+        t3=toc;
         
-        if i==TumeurBis
-            Ub_CV=Ub_CV & Regions{TumeurBis};
-            Ub_CP=Ub_CP & Regions{TumeurBis};
-            Ub_CEN=Ub_CEN & Regions{TumeurBis}; 
+        Time(im,:,iter)=[t1,t2,t3];
+        
+        if ismember(im,ImWithRegion)
+            Ub_CV=Ub_CV & Regions{im};
+            Ub_CP=Ub_CP & Regions{im};
+            Ub_CEN=Ub_CEN & Regions{im}; 
         end
-        Dice_CV(i,iter)=dice(Ub_CV,Gold_Standards{i});
-        Dice_CP(i,iter)=dice(Ub_CP,Gold_Standards{i});
-        Dice_CEN(i,iter)=dice(Ub_CEN,Gold_Standards{i});
-        fprintf("fin de l'it�ration %d.%d\n",iter,i);
+        Dice_CV(im,iter)=SorensenDice(Ub_CV,Gold_Standards{im});
+        Dice_CP(im,iter)=SorensenDice(Ub_CP,Gold_Standards{im});
+        Dice_CEN(im,iter)=SorensenDice(Ub_CEN,Gold_Standards{im});
+        fprintf("fin de l'iteration %d.%d\n",iter,im);
     end
 end
 
-%% Affichage des r�sultats des tests de S�rensen-Dice
-f1=figure('Name','Resultats des tests de S�rensen-Dice','NumberTitle','off');
+%% Affichage des resultats des tests de Serensen-Dice
+f1=figure('Name','Resultats des tests de Serensen-Dice','NumberTitle','off');
 f2=figure('Name','Etude du temps de calcul','NumberTitle','off');
 f3=figure('Name','Images','NumberTitle','off');
 
 iter=0;
-for i=Im2Train
+for im=Im2Train
     iter=iter+1;
     figure(f1);
     
     subplot(1,NbImages,iter);
-    Dice=[Dice_CV(i,:);Dice_CEN(i,:);Dice_CP(i,:)];    
+    Dice=[Dice_CV(im,:);Dice_CEN(im,:);Dice_CP(im,:)];    
     if Log_scale
         semilogx(Lambda,Dice);
     else
@@ -124,36 +102,26 @@ for i=Im2Train
     end
     legend('CV','CEN','CP','Location','best');
     
-    dice_max_CP=max(Dice_CP(i,:));
-    tmp1=find(Dice_CP(i,:)==dice_max_CP);
+    dice_max_CP=max(Dice_CP(im,:));
+    tmp1=find(Dice_CP(im,:)==dice_max_CP);
     lambda_max_CP=Lambda(tmp1(1));
-    dice_max_CEN=max(Dice_CEN(i,:));
-    tmp2=find(Dice_CEN(i,:)==dice_max_CEN);
+    dice_max_CEN=max(Dice_CEN(im,:));
+    tmp2=find(Dice_CEN(im,:)==dice_max_CEN);
     lambda_max_CEN=Lambda(tmp2(1));
-    dice_max_CV=max(Dice_CV(i,:));
-    tmp3=find(Dice_CV(i,:)==dice_max_CV);
+    dice_max_CV=max(Dice_CV(im,:));
+    tmp3=find(Dice_CV(im,:)==dice_max_CV);
     lambda_max_CV=Lambda(tmp3(1));
     
     xlabel({'\lambda'; ['CV : max= ',num2str(dice_max_CV),',  \lambda_{max}= ',num2str(lambda_max_CV)];...
         ['CEN : max= ',num2str(dice_max_CEN),',  \lambda_{max}= ',num2str(lambda_max_CEN)];...
         ['CP : max= ',num2str(dice_max_CP),',  \lambda_{max}= ',num2str(lambda_max_CP)]});
         
-    ylabel('Dice index');
-%     if i==ceil(NbImages/2)
-%         title({"Evolution de l'indice de Dice fonction du param�tre \lambda";['Image ',num2str(i)]});
-%     else
-%         title(["Image ",num2str(i)]);
-%     end
-    if i==1
-        title('Square');
-    elseif i==2
-        title('Coins');
-    else
-        title('Tumor');
-    end
+    ylabel('Dice coefficient');
+    title(filename{im});
+
     figure(f2)
     subplot(1,NbImages,iter);
-    t=reshape(Time(i,:,:),[],length(Lambda));
+    t=reshape(Time(im,:,:),[],length(Lambda));
     if Log_scale
         semilogx(Lambda,t);
     else
@@ -161,34 +129,21 @@ for i=Im2Train
     end
     
     legend('CV','CEN','CP','Location','best');
-    ylabel('t');
-    xlabel('\lambda');
-%     if i==ceil(NbImages/2)
-%         title({'Evolution du temps de calcul en fonction du param�tre \lambda';['Image ',num2str(i)]});
-%     else
-%         title(["Image ",num2str(i)]);
-%     end
-    if i==1
-        title('Square');
-    elseif i==2
-        title('Coins');
-    else
-        title('Tumor');
-    end
+    ylabel('t'); xlabel('\lambda');
+    title(filename{im});
     
     figure(f3)
     subplot(1,NbImages,iter)
-    imshow(Images{i});
+    imshow(Images{im});
     hold on
-    contour(Masks{i},'r','Linewidth',3);
+    contour(Foregrounds{im},'r','Linewidth',3);
+    contour(Backgrounds{im},'g','Linewidth',3);
     hold off
     
-    title(["Image et masque initial ",num2str(i)]);
+    title([filename{im}, " and initial masks"]);
 end
 
-
-if ~Import
-    save('Images/Masks','Masks');
-    save('Images/Backgrounds','Backgrounds');
-    save('Images/Regions','Regions');
+%% Sauvegarde des masques modifies
+if ChangeMasks
+    SaveMasks(filename, Foregrounds,Foreground2Change,Backgrounds, Background2Change,Regions,Region2Change)
 end

@@ -1,99 +1,83 @@
-%% Initialisation 
 clear all; close all;
 
-addpath(genpath('../'));
-load('Images/Masks','Masks');
-load('Images/Backgrounds','Backgrounds');
+filename={'Square','GeometricShape','Coins','BrainTumor','BrainTumorDetail','BrainHole','Lung'};
+extension='.png'; addpath(genpath('../Images/'));
+%% Choix des images sur lesquelles entrainer les algos + importation et modification des masques
+Im2Test=[5]; NbImages=length(Im2Test);
+ImWithRegion=4:7;
 
-SelectImage={'Square.jpg','eight.tif','TumeurCerveaubis.png','TumeurCerveau.png','Poumon.png','CerveauDetail3.png'};
-ImSelect=3;
-SelectMethod={'Bande etroite','Histogrammes'};
-MethSelect=2;
+ChangeMasks=false; Bruitage=false; 
+Foreground2Change=[1,2,3]; Background2Change=[1,2,3]; Region2Change=3;
 
-%% Valeur de lambda + nbins a tester + var booleennes
-lambda=1.e1;
-nbinsF=4; nbinsB=4; 
+[Images, Foregrounds, Backgrounds,~,~]=ImportImageMasks(filename,extension,Im2Test,ImWithRegion,ChangeMasks,Foreground2Change,Background2Change,Region2Change);
+
+%% Valeur de lambda + nbins a tester
+lambda=1.e2;
+nbinsF=10; nbinsB=10;
 % Nombre de bins a prendre en compte pour la zone a segmenter (F=Front) et pour le fond de l'image (B=Back)
 Nbins=[nbinsF,nbinsB];
 
-Import=true;
-Bruitage=false;
 %% Parametres numeriques
-itermax=500; 
-mu=0.5; beta=0.5; theta=0;
-epsilon=1; % parametre >0 servant a eviter des singularites dans la construction des histogrammes
-stop_u=-1.e-6; stop_J=-1.e-6;
-visibility='on';
+itermax=500;
+stop_u=-1.e-8; stop_J=-1.e-8;
+StopConditions=[itermax,stop_u,stop_J];
 
-%% Lecture des images
-Image=double(imread(SelectImage{ImSelect}));
-Image=Image_Normalisation(Image,"2D");
-% Importation des masques ou creation de ces derniers
-if ~Import
-    Mask=roipoly(Image);
-    Background=roipoly(Image);
-    close;
-else
-    Mask=Masks{ImSelect};
-    Background=Backgrounds{ImSelect};
-end
-%% Normalisation des images + ajout de bruit
-Image=Image_Normalisation(Image,"2D");
+mu=0.5; beta=0.5; theta=0; epsilon=1; % parametre >0 servant a eviter des singularites dans la construction des histogrammes
+Parameters=[mu, beta, theta, epsilon];
 
+visibility='on'; cumulative=true;
+
+%% Ajout de bruit aux images
 if Bruitage==true
     bruit=0.05;
+    
+    for im=Im2Test
+        Images{im}=Images{im}+bruit*randn(size(Images{im}));
+        Images{im}=Image_Normalisation(Images{im},"2D");
+    end
+end
+
+%% Definition des figures
+f1=figure('Name','Resultat de la segmentation par histogrammes','NumberTitle','off');
+f2=figure('Name','Evolution des quantites de controle pour les histogrammes','NumberTitle','off');
+
+fig=figure('Name','Histogrammes des regions a segmenter','NumberTitle','off');
+ax1=subplot(2,1,1); ax2=subplot(2,1,2);
+PlotOptions={ax1,ax2,visibility};
+
+%% Boucle for
+iter=0;
+for im=Im2Test
+    iter=iter+1;
+    [ub,J, err_u,err_J,niter]=HistogrammeSegmentation(Images{im},Foregrounds{im},Backgrounds{im},Nbins,cumulative,lambda,Parameters,PlotOptions,StopConditions);
+    
+    figure(f1);
+    subplot(1,NbImages,iter)
+    imagesc(Images{im}); axis off; axis image;
+    colormap gray
+    hold on
+    contour(ub,'r','Linewidth',3);
+    title({filename{im};['\lambda_H= ',num2str(lambda)]});
+    hold off
         
-    Image=Image+bruit*randn(size(Image));
-    Image=Image_Normalisation(Image,"2D");
-    
+    %% Courbes de convergence
+    figure(f2);
+    subplot(3,NbImages,iter)
+    plot(J)
+    title('Fonction cout algo des histogrammes')
+    xlabel('iterations')
+    ylabel('J');
+    subplot(3,NbImages,iter+NbImages)
+    semilogy(err_u);
+    title('Condition de stagnation de la solution')
+    xlabel('iterations')
+    subplot(3,NbImages,iter+2*NbImages)
+    plot(err_J);
+    title('Condition de stagnation de la fonctionnelle')
+    xlabel('iterations')
 end
 
-if strcmp(SelectMethod{MethSelect},'Bande etroite')
-    % Definition des parametres numeriques 
-    lambda=1.e-3; gamma=1;  %lambda : parametre d'attache aux donnes  %gamma : parametre de convexite 
-    tho_u=0.5; tho_z=0.25;    %tho_u & tho_z : pas de descente pour les algo Forward-Backward
-    beta=5; mu=0.1;           %beta : parametre de la bande etroite     %mu : parametre de seuilage 
-    stop_u=0.005; stop_J=0.005;   %sigma : critere d'arret sur la decroissance de la fonctionnelle
-    
-    reset_band=10; % Nombre d'iterations de l'algo Primal-Dual avant de recalculer la level-set
-    itermax=100;
-
-    %% Algorithme de Chambol-Pock avec bande etroite
-    tic
-    [ub,J,niter]=bande_etroite_CP(Image,mask1,beta,tho_u,tho_z,lambda,mu,gamma,stop_u,stop_J,c1,c2,cinconnu,reset_band,itermax);
-    t1=toc;
+%% Sauvegarde des masques modifies
+if ChangeMasks
+    SaveMasks(filename, Foregrounds,Foreground2Change,Backgrounds, Background2Change,Regions,Region2Change);
 end
-
-if strcmp(SelectMethod{MethSelect},'Histogrammes')
-    fig=figure('Name','Histogrammes des regions e segmenter','NumberTitle','off');
-    ax1=subplot(2,1,1); ax2=subplot(2,1,2);
-    
-    PlotOptions={ax1,ax2,visibility};
-    StopConditions=[itermax,stop_u,stop_J];
-    Parameters=[mu, beta, theta, epsilon];
-    [ub,J, err_u,err_J,niter]=HistogrammeSegmentation(Image,Mask,Background,Nbins,lambda,Parameters,PlotOptions,StopConditions);
-end
-
-figure();
-imagesc(Image); axis off; axis image;
-colormap gray
-hold on
-contour(ub,'r','Linewidth',3);
-title(['Resultat histogrammes pour \lambda= ',num2str(lambda),' et nbins= ',num2str(nbinsF)]);
-hold off
-
-%% Courbes de convergence
-figure();
-subplot(1,3,1)
-plot(J)
-title('Fonction cout algo des histogrammes')
-xlabel('iterations')
-ylabel('J');
-subplot(1,3,2)
-semilogy(err_u);
-title('Condition de stagnation de la solution')
-xlabel('iterations')
-subplot(1,3,3)
-plot(err_J);
-title('Condition de stagnation de la fonctionnelle')
-xlabel('iterations')
