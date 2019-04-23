@@ -1,9 +1,20 @@
 clear all; close all;
 
+
 addpath(genpath('../Images/'))
-load('Gold_Standards.mat');
-load('Images/Masks','Masks');
-%load('Images/Backgrounds','Backgrounds');
+image_names={'Square','GeometricShape','Coins','Flag','BrainTumor','BrainTumorDetail','BrainHole','Lung'};
+texture_names={'Energy','Entropy','Correlation','IDM','Inertia','Cluster_Shade','Cluster_Prominence'};
+extension='.png'; addpath(genpath('../Images/'));
+%% Choix des images sur lesquelles entrainer les algos + importation et modification des masques
+Im2Test=[6]; Text2Select=[1,3,5]; NbImages=length(Im2Test);
+ImWithRegion=5:8;
+
+%T=ImportTextures(image_name,Im2Test,texture_names,Text2Select)
+
+TChangeMasks=false; Foreground2Change=[1,2,3]; Background2Change=[1,2,3]; Region2Change=3;
+d_patch=5; d_glcm=1; nb_grey_level=8; chooseTexture=false;
+[Images, Foregrounds, Backgrounds,~,~]=ImportImageMasks(image_names,extension,Im2Test,ImWithRegion,ChangeMasks,Foreground2Change,Background2Change,Region2Change);
+TextureMapping(Images{6},image_names{6},d_patch,d_glcm,nb_grey_level,chooseTexture)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Affiche des masques
 % coins_mask=Gold_Standards{2};
@@ -138,12 +149,12 @@ load('Images/Masks','Masks');
 %
 % end
 %% Normalisation des differents masques
-filename={'Square','GeometricShape','Coins','BrainTumor','BrainTumorDetail','BrainHole','Lung'};
-Im2Def=3;
-Foregrounds={};
-Backgrounds={};
-Regions={}; %a=figure; b=figure; c=figure;
-for i=Im2Def
+% filename={'Square','GeometricShape','Coins','Flag','BrainTumor','BrainTumorDetail','BrainHole','Lung'};
+% Im2Def=4;
+% Foregrounds={};
+% Backgrounds={};
+% Regions={}; %a=figure; b=figure; c=figure;
+% for i=Im2Def
 %     load(['Foregrounds/',filename{i},'_FG.mat'],'FG');
 %     Foregrounds{i}=FG;
 %     load(['Backgrounds/',filename{i},'_BG.mat'],'BG');
@@ -158,36 +169,36 @@ for i=Im2Def
 %         figure(c);
 %         imagesc(R);
 %     end
-    FG=double(imread(['Foregrounds/',filename{i},'_FG.png']));
-    FG=Image_Normalisation(FG,'2D');
-    FG(FG<1)=0; FG=logical(FG);
-    save(['../Images/Foregrounds/',filename{i},'_FG.mat'],'FG');
-    
-    BG=double(imread(['Backgrounds/',filename{i},'_BG.png']));
-    BG=Image_Normalisation(BG,'2D');
-    BG(BG<1)=0; BG=logical(BG);
-    save(['../Images/Backgrounds/',filename{i},'_BG.mat'],'BG');
-    
-    GS=double(imread(['Gold_Standards/',filename{i},'_GS.png']));
-    GS=Image_Normalisation(GS,'2D');
-    GS(GS<1)=0; GS=logical(GS);
-    save(['../Images/Gold_Standards/',filename{i},'_GS.mat'],'GS');
-    if strcmp(filename{i},'Coins')
-        FG=double(imread(['Foregrounds/',filename{i},'_FG_Glob.png']));
-        FG=Image_Normalisation(FG,'2D');
-        FG(FG<1)=0; FG=logical(FG);
-        save(['../Images/Foregrounds/',filename{i},'_FG_Glob.mat'],'FG');
-        
-        BG=double(imread(['Backgrounds/',filename{i},'_BG_Glob.png']));
-        BG=Image_Normalisation(BG,'2D');
-        BG(BG<1)=0; BG=logical(BG);
-        save(['../Images/Backgrounds/',filename{i},'_BG_Glob.mat'],'BG');
-    end
-    
-    if i>3
-        R=double(imread(['../Images/Regions/',filename{i},'_Region.png']));
-        R=Image_Normalisation(R,'2D');
-        R(R<1)=0; R=logical(R);
-        save(['../Images/Regions/',filename{i},'_Region.mat'],'R');
-    end
-end
+%     FG=double(imread(['Foregrounds/',filename{i},'_FG.png']));
+%     FG=Image_Normalisation(FG,'2D');
+%     FG(FG<1)=0; FG=logical(FG);
+%     save(['../Images/Foregrounds/',filename{i},'_FG.mat'],'FG');
+%     
+%     BG=double(imread(['Backgrounds/',filename{i},'_BG.png']));
+%     BG=Image_Normalisation(BG,'2D');
+%     BG(BG<1)=0; BG=logical(BG);
+%     save(['../Images/Backgrounds/',filename{i},'_BG.mat'],'BG');
+%     
+%     GS=double(imread(['Gold_Standards/',filename{i},'_GS.png']));
+%     GS=Image_Normalisation(GS,'2D');
+%     GS(GS<1)=0; GS=logical(GS);
+%     save(['../Images/Gold_Standards/',filename{i},'_GS.mat'],'GS');
+%     if strcmp(filename{i},'Coins')
+%         FG=double(imread(['Foregrounds/',filename{i},'_FG_Glob.png']));
+%         FG=Image_Normalisation(FG,'2D');
+%         FG(FG<1)=0; FG=logical(FG);
+%         save(['../Images/Foregrounds/',filename{i},'_FG_Glob.mat'],'FG');
+%         
+%         BG=double(imread(['Backgrounds/',filename{i},'_BG_Glob.png']));
+%         BG=Image_Normalisation(BG,'2D');
+%         BG(BG<1)=0; BG=logical(BG);
+%         save(['../Images/Backgrounds/',filename{i},'_BG_Glob.mat'],'BG');
+%     end
+%     
+%     if i>4
+%         R=double(imread(['../Images/Regions/',filename{i},'_Region.png']));
+%         R=Image_Normalisation(R,'2D');
+%         R(R<1)=0; R=logical(R);
+%         save(['../Images/Regions/',filename{i},'_Region.mat'],'R');
+%     end
+% end

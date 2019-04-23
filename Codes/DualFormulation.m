@@ -91,7 +91,7 @@ while (niter<itermax && cond_u>StopConditions(2)&& cond_J>StopConditions(3))
         niter=niter-1; k=k+1;
         
         u=uold; z1=z1_old; z2=z2_old;
-        su=su/2; sz=2/sz;  % ! A voir s'il ne faut pas diviser le pas de la variable duale par 2 ! 
+        su=su/2; sz=2*sz;  % ! A voir s'il ne faut pas diviser le pas de la variable duale par 2 ! 
     else
         % Sinon, on accepte la nouvelle iteration et on reinitialise le pas 
         su=tho_u; sz=tho_z; k=0;

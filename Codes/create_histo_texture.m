@@ -1,4 +1,4 @@
-function [A,B,Tau,Sigma_1,Sigma_2,Sigma_3,b]=create_histo(Image,Foreground,Background,Nbins,epsilon,Cumulative,Visibility)
+function [A,B,Tau,Sigma_1,Sigma_2,Sigma_3,b]=create_histo_texture(Image,Texture,Foreground,Background,Nbins,epsilon,Cumulative,Visibility)
 %% Creation des quantites necessaires a l'algorithme de segmentation par histogrammes
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUTS :
@@ -26,48 +26,98 @@ function [A,B,Tau,Sigma_1,Sigma_2,Sigma_3,b]=create_histo(Image,Foreground,Backg
 % b: Vecteur de dimension [nbins{2},1] trouve en calculant le produit scalaire dans \Omega de g0 avec 1
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Debut algo
-fprintf('Creation des histogrammes et des operateurs associes');
-[m,n,p]=size(Image); 
+[m,n,p]=size(Image);
+Names=fieldnames(Texture);
+NbPlots=length(Names)+1;
 
 %% Initialisation des parametres d'affichage
 fig=figure('Name','Histogrammes des regions a segmenter','NumberTitle','off');
 
-ax1=subplot(2,1,1); title('Histogramme de la region a segmenter : h^1');
-ax2=subplot(2,1,2); title("Histogramme du fond de l'image : h^0");
+ax1=subplot(2,NbPlots,1); 
+ax2=subplot(2,NbPlots,NbPlots+1); 
 
 %% Creation des histogrammes de couleur
+fprintf('Creation des histogrammes de couleur\n');
+
 h1=histogram(ax1,Image(Foreground),'NumBins',Nbins(1),'BinLimits',[0,1],'Normalization',Cumulative.normalisation,'Visible',Visibility);
 h0=histogram(ax2,Image(Background),'NumBins',Nbins(2),'BinLimits',[0,1],'Normalization',Cumulative.normalisation,'Visible',Visibility);
-
+title(ax1,'Image'); ylabel(ax1,'h^1 : '); title(ax2,'Image');  ylabel(ax2,'h^0 : ');
 %% Initialisation des operateurs A et B
 A=zeros(Nbins(1),m,n,p); B=zeros(Nbins(2),m,n,p);
 
 %% Boucle sur les bins de h1
-% figure(20)
 for lambda= 1:Nbins(1)
     if Cumulative.value
         A(lambda,:,:,:)= double(Image<=h1.BinEdges(lambda+1))-h1.Values(lambda);
     else
         A(lambda,:,:,:)= double((Image>=h1.BinEdges(lambda))&(Image<=h1.BinEdges(lambda+1)))-h1.Values(lambda);
     end
-%     subplot(1,Nbins(1),lambda)
-%     imagesc(reshape(A(lambda,:,:),m,n,p)); axis off; axis image;
 end
 %% Boucle sur les bins de h0
-% figure(30)
 for lambda=1:Nbins(2)
     if Cumulative.value
         B(lambda,:,:,:)= double(Image<=h0.BinEdges(lambda+1))-h0.Values(lambda);
     else
         B(lambda,:,:,:)= double((Image>=h0.BinEdges(lambda))&(Image<=h0.BinEdges(lambda+1)))-h0.Values(lambda);
-    end    
-%     subplot(1,Nbins(2),lambda)
-%     imagesc(reshape(B(lambda,:,:,:),m,n,p)); axis off; axis image;
+    end
 end
 
 %% Redimentionnement des matrices !
 A=reshape(A,Nbins(1),m*n*p);
 B=reshape(B,Nbins(2),m*n*p);
+
+%% Let's do it again !
+iter=1;
+for indn=1:length(Names)
+    name=Names{indn}; iter=iter+1;
+    
+    ax1=subplot(2,NbPlots,iter); 
+    ax2=subplot(2,NbPlots,iter+NbPlots); 
+    
+    A_temp=zeros(Nbins(1),m,n,p); B_temp=zeros(Nbins(2),m,n,p);
+    switch name
+        case 'Energy'
+            IndicateurTexture=Texture.Energy;
+        case 'Entropy'
+            IndicateurTexture=Texture.Entropy;
+        case 'Correlation'
+            IndicateurTexture=Texture.Correlation;
+        case 'IDM'
+            IndicateurTexture=Texture.IDM;
+        case 'Inertia'
+            IndicateurTexture=Texture.Inertia;
+        case 'Cluster_Shade'
+            IndicateurTexture=Texture.Cluster_Shade;
+        case 'Cluster_Prominence'
+            IndicateurTexture=Texture.Cluster_Prominence;
+    end
+    %% Creation des histogrammes pour les indicateurs de texture
+    fprintf("Creation des histogrammes associes a l'indicateur de texture : %s \n",name);
+    
+    h1=histogram(ax1,IndicateurTexture(Foreground),'NumBins',Nbins(1),'BinLimits',[0,1],'Normalization',Cumulative.normalisation,'Visible',Visibility);
+    h0=histogram(ax2,IndicateurTexture(Background),'NumBins',Nbins(2),'BinLimits',[0,1],'Normalization',Cumulative.normalisation,'Visible',Visibility);
+    title(ax1,name,'Interpreter','none'); title(ax2,name,'Interpreter','none');
+    %% Boucle sur les bins de h1
+    for lambda= 1:Nbins(1)
+        if Cumulative.value
+            A_temp(lambda,:,:,:)= double(IndicateurTexture<=h1.BinEdges(lambda+1))-h1.Values(lambda);
+        else
+            A_temp(lambda,:,:,:)= double((IndicateurTexture>=h1.BinEdges(lambda))&(IndicateurTexture<=h1.BinEdges(lambda+1)))-h1.Values(lambda);
+        end
+    end
+    %% Boucle sur les bins de h0
+    for lambda=1:Nbins(2)
+        if Cumulative.value
+            B_temp(lambda,:,:,:)= double(IndicateurTexture<=h0.BinEdges(lambda+1))-h0.Values(lambda);
+        else
+            B_temp(lambda,:,:,:)= double((IndicateurTexture>=h0.BinEdges(lambda))&(IndicateurTexture<=h0.BinEdges(lambda+1)))-h0.Values(lambda);
+        end
+    end
+    
+    %% Redimentionnement des matrices et concatenation
+    A_temp=reshape(A_temp,Nbins(1),m*n*p); A=[A; A_temp];
+    B_temp=reshape(B_temp,Nbins(2),m*n*p); B=[B; B_temp];
+end
 
 %% Creation des matrices de regularisation
 Sigma_1=1/(epsilon+4);
@@ -77,6 +127,6 @@ Sigma_3=1./(epsilon+sum(abs(B),2));
 Tau=1./(2+sum(abs(A),1)+sum(abs(B),1)+epsilon)'; % On souhaite que Tau soit un vecteur de R^{m*n}
 b=sum(B,2);
 
-if ~Visibility 
+if ~Visibility
     close(fig);
 end

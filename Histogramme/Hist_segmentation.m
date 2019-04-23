@@ -20,10 +20,10 @@ im_file = list_im{1}; %
 type='.png';%'.png'; %or '.jpg'
 
 
-rho=1000;   %TV regularization (6 for parrots, 2 for zebra) 
+rho=2;   %TV regularization (6 for parrots, 2 for zebra) 
 nb_bin=6;  %number of histogram bin on each canal
 nb_label=2; %number of class  (given input: 3 for parrots, 2 for zebra)
-manual_input_histogram_areas=1; %set 0 if reading input areas
+manual_input_histogram_areas=0; %set 0 if reading input areas
 gradient_histograms=1;  %set 1 to consider histograms of gradient norms instead of histograms of colors
 niter_max=500.;
 gray_image=1;   %set to 1 to force grayvalues

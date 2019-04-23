@@ -10,10 +10,5 @@ function n=norm_grad(nabla_u)
 % OUTPUT : 
 % n : vecteur colonne contenant la norme 2 du champ nabla_u en chaque point de l'espace etudie
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-dim=size(nabla_u,2);
-if dim==2
-    n=sqrt(nabla_u(:,1).^2+nabla_u(:,2).^2);
-elseif dim==3
-    n=sqrt(nabla_u(:,1).^2+nabla_u(:,2).^2+nabla_u(:,3).^2);
-end
+n=sqrt(sum(nabla_u.^2,2));
 end
