@@ -4,7 +4,7 @@ sz=size(Image);
 
 Energy=zeros(sz); Entropy=zeros(sz); Correlation=zeros(sz); IDM=zeros(sz);
 Inertia=zeros(sz); Cluster_Shade=zeros(sz); Cluster_Prominence=zeros(sz);
-Texture_names={'Energy','Entropy','Correlation','IDM','Inertia','Cluster_Shade','Cluster_Prominence'};
+Texture_names={'Color','Energy','Entropy','Correlation','IDM','Inertia','Cluster_Shade','Cluster_Prominence'};
 
 [mat_C,mat_L]=meshgrid(1:8);
 offsets=[0 , d_glcm ; d_glcm , d_glcm ; d_glcm , 0 ; d_glcm , -d_glcm];
@@ -19,7 +19,7 @@ for i=1:sz(1)
         GLCM=graycomatrix(Patch,'Offset',offsets,'Symmetric',true);
 
         for k=1:4
-            glcm_temp=GLCM(:,:,k);
+            glcm_temp=GLCM(:,:,k)/((i_max-i_min)*(j_max-j_min));
             mask_temp=glcm_temp~=0;
             
             mu=sum(sum(mat_L.*glcm_temp));
@@ -27,7 +27,7 @@ for i=1:sz(1)
             
             Energy(i,j)=Energy(i,j)+sum(sum(glcm_temp.^2));
             
-            Entropy(i,j)=Entropy(i,j)+sum(glcm_temp(mask_temp).*log2(glcm_temp(mask_temp)));
+            Entropy(i,j)=Entropy(i,j)+sum(sum(glcm_temp(mask_temp).*log2(glcm_temp(mask_temp))));
             
             Correlation(i,j)=Correlation(i,j)+sum(sum((mat_L-mu).*glcm_temp.*(mat_C-mu)))/var;
             
@@ -58,7 +58,7 @@ Inertia=Image_Normalisation(Inertia/4,"2D");
 Cluster_Shade=Image_Normalisation(Cluster_Shade/4,"2D");
 Cluster_Prominence=Image_Normalisation(Cluster_Prominence/4,"2D");
         
-Cluster_Prominence=adapthisteq(Cluster_Prominence);
+%Cluster_Prominence=adapthisteq(Cluster_Prominence);
 %% Affichage des differents indices de texture 
 figure(20)
 ax1=subplot(331); imshow(Image); title('Image');
@@ -74,17 +74,22 @@ linkaxes([ax1,ax2,ax3,ax4,ax5,ax6,ax7,ax8],'xy');
 %% Choix des textures a prendre en compte 
 if ChooseTexture
     Text2Consider=input(['Rentrer le nom des indicateurs de texture a prendre en compte sous forme d un vecteur \n',...
-        '1 : Energy, 2 : Entropy, 3 : Correlation, 4 : IDM\n',...
-        '5 : Inertia, 6 : Cluster_Shade, 7 : Cluster_Prominence\n']);
+        '1 : Color, 2 : Energy, 3 : Entropy, 4 : Correlation\n',...
+        '5 : IDM, 6 : Inertia, 7 : Cluster_Shade, 8 : Cluster_Prominence\n']);
 else
-    Text2Consider=1:7;
+    Text2Consider=1:8;
 end
 
 %% Creation de la structure Texture comportant les differents indicateurs de texture
 for text=Text2Consider
     name=Texture_names{text};
-    save(['../Images/Textures/',name,'/',Image_name,'_TX.mat'],name);
+    if ~strcmp(name,'Color')
+        save(['../Images/Textures/',name,'/',Image_name,'_TX.mat'],name);
+    end
+    
     switch name
+        case 'Color'
+            Texture.Color=Image;
         case 'Energy'
             Texture.Energy=Energy;
         case 'Entropy'

@@ -77,6 +77,6 @@ Sigma_3=1./(epsilon+sum(abs(B),2));
 Tau=1./(2+sum(abs(A),1)+sum(abs(B),1)+epsilon)'; % On souhaite que Tau soit un vecteur de R^{m*n}
 b=sum(B,2);
 
-if ~Visibility 
+if strcmp(Visibility,'off') 
     close(fig);
 end

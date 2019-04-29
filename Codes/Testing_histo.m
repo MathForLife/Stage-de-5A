@@ -1,7 +1,7 @@
 clear all; close all;
 
 image_names={'Square','GeometricShape','Coins','Flag','BrainTumor','BrainTumorDetail','BrainHole','Lung'};
-texture_names={'Energy','Entropy','Correlation','IDM','Inertia','Cluster_Shade','Cluster_Prominence'};
+texture_names={'Color','Energy','Entropy','Correlation','IDM','Inertia','Cluster_Shade','Cluster_Prominence'};
 extension='.png'; addpath(genpath('../Images/'));
 %% Choix des images sur lesquelles entrainer les algos + importation et modification des masques
 Im2Test=[6]; NbImages=length(Im2Test);
@@ -16,7 +16,7 @@ if ImportTexture
 else
     %Textures=struct([]);
     
-    d_patch=5; d_glcm=1; ChooseTexture=true;
+    d_patch=3; d_glcm=1; ChooseTexture=true;
     for im=Im2Test
         
     %% Creation des cartes de texture
@@ -35,10 +35,10 @@ itermax=500;
 stop_u=-1.e-8; stop_J=-1.e-8;
 StopConditions=[itermax,stop_u,stop_J];
 
-mu=0.5; beta=0.5; theta=1; epsilon=0.1; % parametre >0 servant a eviter des singularites dans la construction des histogrammes
+mu=0.5; beta=0.5; theta=1; epsilon=0.01; % parametre >0 servant a eviter des singularites dans la construction des histogrammes
 Parameters=[mu, beta, theta, epsilon];
 
-visibility=true; cumulative.value=false; 
+visibility='on'; cumulative.value=false; 
 if cumulative.value
     cumulative.normalisation='cdf';
 else

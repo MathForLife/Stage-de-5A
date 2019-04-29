@@ -1,6 +1,5 @@
 function Textures=ImportTextures(image_names,Im2Select,texture_names,Text2Select)
 fprintf('Importation des textures');
-Textures=struct([]);
 for im=Im2Select
     for text=Text2Select
         name=texture_names{text};
