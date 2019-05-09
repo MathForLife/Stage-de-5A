@@ -1,4 +1,4 @@
-function [ub,J, err_u,err_J,nQ1,nQ2,nQ3,niter]=HistogrammeSegmentation(Image,lambda,Foreground,Background,Nbins,Cumulative,Visibility,CompareTexture,Parameters,StopCondition,varargin)
+function [ub,J, err_u,err_J,nQ1,nQ2,nQ3,niter]=HistogrammeSegmentation(Image,lambda,Foreground,Background,Nbins,Cumulative,Visibility,Parameters,StopCondition,Textures)
 %% Algorithme de segmentation par histogrammes inspire des travaux de R.Yildizoglu, J-F Aujol, N.Papadakis
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUTS:
@@ -36,12 +36,13 @@ itermax=StopCondition(1);
 mu=Parameters(1); beta=Parameters(2);theta=Parameters(3); epsilon=Parameters(4);
 
 % Creation des histogrammes
-if CompareTexture
-    Textures=varargin{1};
-    [A,B,Tau,Sigma_1,Sigma_2,Sigma_3,b]=create_histo_texture(Image,Textures,Foreground,Background,Nbins,epsilon,Cumulative,Visibility);
-else
-    [A,B,Tau,Sigma_1,Sigma_2,Sigma_3,b]=create_histo(Image,Foreground,Background,Nbins,epsilon,Cumulative,Visibility);
-end
+
+% if CompareTexture
+%     [A,B,Tau,Sigma_1,Sigma_2,Sigma_3,b]=create_histo_texture(Image,Textures,Foreground,Background,Nbins,epsilon,Cumulative,Visibility);
+% else
+%     [A,B,Tau,Sigma_1,Sigma_2,Sigma_3,b]=create_histo(Image,Foreground,Background,Nbins,epsilon,Cumulative,Visibility);
+% end
+[A,B,Tau,Sigma_1,Sigma_2,Sigma_3,b]=create_histo_texture(Image,Textures,Foreground,Background,Nbins,epsilon,Cumulative,Visibility);
 % Calcul de la dimension de l'image pour sa vectorisation
 sz=size(Image);
 dim=length(sz);
@@ -52,6 +53,7 @@ elseif dim==3
 end
 
 %% Initialisation de toutes les variables
+fprintf("Debut de l'algorithme de segmentation par histogrammes\n");
 niter=1; 
 % Variable interne permettant d'eviter les boucles infinies quand les conditions d'arret ne sont pas realisables
 k=0; seuil=30; 
@@ -67,7 +69,7 @@ u=Image; u=reshape(u,vect_length,1);
 % Initialisation de la variabe duale Q1=P_B(\nabla u)
 Q1=grad_mat(u,sz);
 %Q1=zeros(vect_length,dim);
-normQ1=norm_grad(Q1); normCond=normQ1>1;
+normQ1=norm_grad(Q1,0); normCond=normQ1>1;
 Q1(normCond,1)=Q1(normCond,1)./normQ1(normCond);
 Q1(normCond,2)=Q1(normCond,2)./normQ1(normCond);
 if dim==3
@@ -96,7 +98,7 @@ while (niter<itermax && cond_u>StopCondition(2) && cond_J>StopCondition(3))
     u_old=u;
     % Iteration sur la variable primale
 %     figure(5); 
-    u=u+Tu.*(div_mat(Q1,sz)-A'*Q2+B'*Q3);
+    u=u_old+Tu.*(div_mat(Q1,sz)-A'*Q2+B'*Q3);
     
 %     subplot(141); imagesc(reshape(u,sz)); axis off; axis image;
   
@@ -117,7 +119,7 @@ while (niter<itermax && cond_u>StopCondition(2) && cond_J>StopCondition(3))
     
     % Iteration sur la première variable duale
     Q1=Q1+S1*grad_mat(u_tilde,sz);
-    normQ1=norm_grad(Q1); normCond=normQ1>1;
+    normQ1=norm_grad(Q1,0); normCond=normQ1>1;
     Q1(normCond,1)=Q1(normCond,1)./normQ1(normCond);
     Q1(normCond,2)=Q1(normCond,2)./normQ1(normCond);
     if dim==3
@@ -136,7 +138,7 @@ while (niter<itermax && cond_u>StopCondition(2) && cond_J>StopCondition(3))
     cond_u=norm(u-u_old)/norm(u_old);
     cond_J=abs(J(niter)-J(niter-1))/abs(J(niter-1));
 
-    if J(niter)>10*J(niter-1)
+    if J(niter)>2*J(niter-1)
         % Si la fonctionnelle augmente, on divise le pas par 2 et on recommence l'iteration
         fprintf('J= %f, niter= %d\n',J(niter),niter)
         niter=niter-1; k=k+1;
@@ -150,7 +152,7 @@ while (niter<itermax && cond_u>StopCondition(2) && cond_J>StopCondition(3))
         
         err_u(niter)=cond_u;
         err_J(niter)=cond_J;
-        nQ1(niter)=max(norm_grad(Q1));
+        nQ1(niter)=max(norm_grad(Q1,0));
         nQ2(niter)=norm(Q2); 
         nQ3(niter)=norm(Q3);
     end

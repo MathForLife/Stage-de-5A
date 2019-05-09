@@ -26,7 +26,7 @@ function [A,B,Tau,Sigma_1,Sigma_2,Sigma_3,b]=create_histo(Image,Foreground,Backg
 % b: Vecteur de dimension [nbins{2},1] trouve en calculant le produit scalaire dans \Omega de g0 avec 1
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Debut algo
-fprintf('Creation des histogrammes et des operateurs associes');
+fprintf('Creation des histogrammes et des operateurs associes\n');
 [m,n,p]=size(Image); 
 
 %% Initialisation des parametres d'affichage

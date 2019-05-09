@@ -1,55 +1,33 @@
-function [Images, Foregrounds, Backgrounds,Regions,Gold_Standards]=ImportImageMasks(filename,extension,Im2Train,ImWithRegion,ChangeMasks,varargin)
-%% Fonction permetant l'importation de masques et d'images existants ainsi que la modification des masques
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [Images, Textures, Foregrounds, Backgrounds, Regions,Gold_Standards]=ImportImageMasks(image_names,extension,Im2Consider,import_masks,ImWithRegion,change_masks,Foreground2Change,Background2Change,Region2Change,import_textures,choose_texture,change_textures,Texture2Change)
+% Fonction permetant l'importation de masques et d'images existants ainsi que la modification des masques
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUTS :
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % OUTPUTS :
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Initialisation des dictionnaires
-Images={}; Foregrounds={}; Backgrounds={}; Regions={}; Gold_Standards={};
-%% Importation des images et des masques
-fprintf('Importation des images et des masques\n');
-for im=Im2Train
-    Images{im}=imread([filename{im},extension]);
-    load(['Foregrounds/',filename{im},'_FG.mat'],'FG');
-    Foregrounds{im}=FG;
-    load(['Backgrounds/',filename{im},'_BG.mat'],'BG');
-    Backgrounds{im}=BG;
-    if ismember(im,ImWithRegion)
-        load(['Regions/',filename{im},'_Region.mat'],'R');
-        Regions{im}=R;
-    end    
-    load(['Gold_Standards/',filename{im},'_GS.mat'],'GS');
-    Gold_Standards{im}=GS;
-end
-
-%% Normalisation des images
-fprintf('Normalisation des images\n');
-for im=Im2Train
-    Images{im}=Image_Normalisation(Images{im},"2D");
-end
-
-%% Creation de nouveaux masques 
-if ChangeMasks
-    fprintf('Creation de nouveaux masques\n');
-
-    Foreground2Change=varargin{1}; Background2Change=varargin{2}; Region2Change=varargin{3};
-    for f=Foreground2Change
-        fprintf("Choisissez la region a segmenter sur l'image %s\n",filename{f});
-        Foregrounds{f}=roipoly(Images{f});
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Importation des images
+Images=ImportImages(image_names,extension,Im2Consider); 
+%% Importation ou creation des masques
+Gold_Standards={};
+if import_masks
+    [Foregrounds, Backgrounds,Regions,Gold_Standards]=ImportMasks(image_names,extension,Im2Consider,ImWithRegion);
+    %% Creation de nouveaux masques
+    if change_masks
+        [Foregrounds, Backgrounds,Regions]=CreatMasks(Images,image_names,extension,Foregrounds,Foreground2Change,Backgrounds,Background2Change,Regions,Region2Change);
     end
-    close;
+else
+    [Foregrounds, Backgrounds,Regions]=CreatMasks(Images,image_names,extension,{},Im2Consider,{},Im2Consider,{},ImWithRegion);
+end
+
+%% Importation ou creation des textures
+if import_textures
+    Textures=ImportTextures(Images,image_names,Im2Consider);
+    %% Creation de nouvelles textures
+    if change_textures
+        Textures=CreatTextures(Images,Textures,image_names,Texture2Change,choose_texture);
+    end
+else
+    Textures=CreatTextures(Images,{},image_names,Im2Consider,choose_texture);
+end
     
-    for b=Background2Change
-        fprintf("Choisissez un element de fond de l'image %d\n",filename{b});
-        Backgrounds{b}=roipoly(Images{b});
-    end
-    close;
-    
-    for r=Region2Change
-        fprintf("Choisissez la region de la radio a comparer avec le gold standard\n");
-        Regions{r}=roipoly(Images{r});
-    end
-    close;
-end
 end

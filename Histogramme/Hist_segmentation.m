@@ -15,18 +15,18 @@ clear all
 clc
 addpath('tools');
 %parameters:
-list_im = {'zebra', 'aras','Coins','TumeurCerveaubis'};  %image to_load
-im_file = list_im{1}; %
-type='.png';%'.png'; %or '.jpg'
+list_im = {'zebra', 'aras','chat','BrainTumor','BrainTumorDetail','BrainMeta_A','GBM_A','Gliome003_S','Parenchyme_C','pneumopath_6_A'};  %image to_load
+im_file = list_im{3}; %
+type='.jpeg';%'.png'; %or '.jpg'
 
 
-rho=2;   %TV regularization (6 for parrots, 2 for zebra) 
-nb_bin=6;  %number of histogram bin on each canal
+rho=5;   %TV regularization (6 for parrots, 2 for zebra) 
+nb_bin=10;  %number of histogram bin on each canal
 nb_label=2; %number of class  (given input: 3 for parrots, 2 for zebra)
 manual_input_histogram_areas=0; %set 0 if reading input areas
-gradient_histograms=1;  %set 1 to consider histograms of gradient norms instead of histograms of colors
+gradient_histograms=false;  %set 1 to consider histograms of gradient norms instead of histograms of colors
 niter_max=500.;
-gray_image=1;   %set to 1 to force grayvalues
+gray_image=false;   %set to 1 to force grayvalues
 nb_label=max(2,nb_label);
 disp(['Segmentation of the image in ' num2str(nb_label) ' regions.']);
 

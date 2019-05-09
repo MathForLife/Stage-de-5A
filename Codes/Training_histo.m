@@ -1,37 +1,39 @@
 clear all; close all;
 
-filename={'Square','GeometricShape','Coins','Flag','BrainTumor','BrainTumorDetail','BrainHole','Lung'};
+image_names={'Square','GeometricShape','Coins','Flag','BrainTumor','BrainTumorDetail','BrainHole','Lung'};
 extension='.png'; addpath(genpath('../Images/'));
 %% Choix des images sur lesquelles entrainer les algos + importation et modification des masques
-Im2Train=[1,3,6]; 
+Im2Train=[6]; NbImages=length(Im2Train);
 ImWithRegion=5:8; 
 
-ChangeMasks=false;
+ChangeMasks=false; Bruitage=false; CompareTexture=true; ImportTexture=true; ChooseTexture=true;
 Foreground2Change=[1,2,3]; Background2Change=[1,2,3]; Region2Change=3;
 
-[Images, Foregrounds, Backgrounds,Regions,Gold_Standards]=ImportImageMasks(filename,extension,Im2Train,ImWithRegion,ChangeMasks,Foreground2Change,Background2Change,Region2Change);
-% Cas où on compare l'image BrainTumorDetail avec ses 2 GS
-if ismember(6,Im2Train)
-    TestGSBrainTumor=true;
-    load(['Gold_Standards/',filename{6},'_GS2.mat'],'GS');
-    GS_FullTumor=GS;
-else
-    TestGSBrainTumor=false;
-end
+[Images, Textures, Foregrounds, Backgrounds,Regions,Gold_Standards]=ImportImageMasks(image_names,extension,Im2Train,ImWithRegion,ChooseTexture,ChangeMasks,Foreground2Change,Background2Change,Region2Change);
 %% Initialisation des parametres du test de Sorensen-Dice
 fprintf('Initialisation des parametres \n');
 pow_min=-6; pow_max=6; pow_step=1;
-Log_scale=true; CompareTexture=false;
+Log_scale=true; 
 
 NbinsF=[2,5,10]; NbinsB=[2,5,10];
 
 pow_length=length(pow_min:pow_step:pow_max);
-bins_length=length(NbinsF); NbImages=length(Im2Train);
+bins_length=length(NbinsF); 
 
 Lambda=nan(1,pow_length);
 Dice_Histo=nan(NbImages,bins_length,pow_length);
-Dice_FullTumor=nan(bins_length,pow_length);
+
+%% Cas ou on compare l'image BrainTumorDetail avec ses 2 Gold Standards
+if ismember('BrainTumorDetail',image_names(Im2Train))
+    TestGSBrainTumor=true;
+    load(['Gold_Standards/',image_names{6},'_GS2.mat'],'GS');
+    GS_FullTumor=GS;
+    Dice_FullTumor=nan(bins_length,pow_length);
+else
+    TestGSBrainTumor=false;
+end
 Times=nan(NbImages,bins_length,pow_length);
+
 %% Parametres numeriques (se referer au programme HrstogrammeSegmentation pour le detail de ces parametres)
 itermax=500;  
 mu=0.5; beta=0.5; theta=1; epsilon=1;
@@ -39,15 +41,17 @@ stop_u=-1.e-8; stop_J=-1.e-8;
 
 % Arguments utilises pour voir les histogrammes 
 fig=figure('Name','Histogramme des regions a segmenter','NumberTitle','off');
-hist_visibility='off'; cumulative=true;
+hist_visibility='off'; cumulative.value=true;
+if cumulative.value
+    cumulative.normalisation='cdf';
+else
+    cumulative.normalisation='probability';
+end
 
 fprintf('%d iterations prevues\n',pow_length);
 iter=0;
-%% Cas où on inclue les images
-if CompareTexture
-    fig=figure('Name','Indices de texture des images','NumberTitle','off')
-    [ImageTexture,NbTexture]=TextureChoice(Images,Im2Train,fig);
-end
+
+
 %% Creation des figures 
 figure(fig);
 ax1=subplot(2,1,1); ax2=subplot(2,1,2);
@@ -73,7 +77,7 @@ for ind=pow_min:pow_step:pow_max
         for bins=1:bins_length     
             Nbins=[NbinsF(bins),NbinsB(bins)];
             tic
-            [Ub_Histo,~,~,~,~]=HistogrammeSegmentation(Images{im},Foregrounds{im},Backgrounds{im},CompareTexture, Nbins,cumulative,lambda,Parameters,PlotOptions,StopConditions);
+            [Ub_Histo,~, ~,~,~,~,~,~]=HistogrammeSegmentation(Images{im},lambda,Foregrounds{im},Backgrounds{im},Nbins,cumulative,hist_visibility,Parameters,StopConditions,Textures{im});
             Times(im,bins,iter)=toc;
             
             if ismember(im,ImWithRegion)
@@ -86,7 +90,7 @@ for ind=pow_min:pow_step:pow_max
 %             subplot(144); imshow(Regions{TumeurBis});
             
             Dice_Histo(im,bins,iter)=SorensenDice(Ub_Histo,Gold_Standards{im});
-            if strcmp(filename{im},'BrainTumorDetail')
+            if strcmp(image_names{im},'BrainTumorDetail')
                 Dice_FullTumor(bins,iter)=SorensenDice(Ub_Histo,GS_FullTumor);
             end
         end
@@ -130,9 +134,9 @@ for im=Im2Train
     legend(leg,'Location','best');
     xlabel('\lambda');
     ylabel('Dice index');
-    title(filename{im});
+    title(image_names{im});
     
-    if strcmp(filename{im},'BrainTumorDetail') 
+    if strcmp(image_names{im},'BrainTumorDetail') 
         iterDiceplot=iterDiceplot+1;
         subplot(1,NbDiceplot,iterDiceplot);
         
@@ -145,7 +149,7 @@ for im=Im2Train
         legend(leg,'Location','best');
         xlabel('\lambda');
         ylabel('Dice index');
-        title([filename{im},'\_GS2']);
+        title([image_names{im},'\_GS2']);
     end
     figure(f2);
     subplot(1,NbImages,iter);
@@ -159,7 +163,7 @@ for im=Im2Train
     
     ylabel('t');
     xlabel('\lambda');
-    title(filename{im});
+    title(image_names{im});
     
     figure(f3);
     subplot(1,NbImages,iter)
@@ -169,15 +173,10 @@ for im=Im2Train
     contour(Backgrounds{im},'g','Linewidth',3);
     hold off
      if im==ceil(NbImages/2)
-        title({'Image + Initial mask + Background mask';filename{im}});
+        title({'Image + Initial mask + Background mask';image_names{im}});
         legend('Initial segmentation mask','Background mask');
         legend('Initial \partial \Omega_1','Initial \partial \Omega_0');
     else
-        title(filename{im});
+        title(image_names{im});
      end
-end
-
-%% Sauvegarde des masques modifies
-if ChangeMasks
-    SaveMasks(filename, Foregrounds,Foreground2Change,Backgrounds, Background2Change,Regions,Region2Change)
 end

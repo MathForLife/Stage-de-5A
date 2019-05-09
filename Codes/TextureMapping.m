@@ -1,5 +1,5 @@
-function Texture=TextureMapping(Image,Image_name,d_patch,d_glcm,ChooseTexture)
-fprintf('Creation des cartes de texture\n');
+function Texture=TextureMapping(Image,Image_name,ChooseTexture,d_patch,d_glcm)
+fprintf('Creation des cartes de texture pour %s\n',Image_name);
 sz=size(Image);
 
 Energy=zeros(sz); Entropy=zeros(sz); Correlation=zeros(sz); IDM=zeros(sz);
@@ -10,16 +10,16 @@ Texture_names={'Color','Energy','Entropy','Correlation','IDM','Inertia','Cluster
 offsets=[0 , d_glcm ; d_glcm , d_glcm ; d_glcm , 0 ; d_glcm , -d_glcm];
 %% Boucles sur les pixels de l'image
 for i=1:sz(1)
-    % 
+    %
     i_min=max(i-d_patch,1); i_max=min(i+d_patch,sz(1));
-    for j=1:sz(2)        
+    for j=1:sz(2)
         j_min=max(j-d_patch,1); j_max=min(j+d_patch,sz(2));
         Patch=Image(i_min:i_max,j_min:j_max);
         
         GLCM=graycomatrix(Patch,'Offset',offsets,'Symmetric',true);
-
+        
         for k=1:4
-            glcm_temp=GLCM(:,:,k)/((i_max-i_min)*(j_max-j_min));
+            glcm_temp=GLCM(:,:,k)/((i_max-i_min+1)*(j_max-j_min+1));
             mask_temp=glcm_temp~=0;
             
             mu=sum(sum(mat_L.*glcm_temp));
@@ -39,13 +39,13 @@ for i=1:sz(1)
             
             Cluster_Prominence(i,j)=Cluster_Prominence(i,j)+sum(sum(((mat_L-mu)+(mat_C-mu)).^4.*glcm_temp));
         end
-%         Energy(i,j)=Energy(i,j)/4;
-%         Entropy(i,j)=Entropy(i,j)/4;        
-%         Correlation(i,j)=Correlation(i,j)/4;
-%         IDM(i,j)=IDM(i,j)/4;
-%         Inertia(i,j)=Inertia(i,j)/4;        
-%         Cluster_Shade(i,j)=Cluster_Shade(i,j)/4;
-%         Cluster_Prominence(i,j)=Cluster_Prominence(i,j)/4;
+        %         Energy(i,j)=Energy(i,j)/4;
+        %         Entropy(i,j)=Entropy(i,j)/4;
+        %         Correlation(i,j)=Correlation(i,j)/4;
+        %         IDM(i,j)=IDM(i,j)/4;
+        %         Inertia(i,j)=Inertia(i,j)/4;
+        %         Cluster_Shade(i,j)=Cluster_Shade(i,j)/4;
+        %         Cluster_Prominence(i,j)=Cluster_Prominence(i,j)/4;
         
     end
 end
@@ -57,9 +57,9 @@ IDM=Image_Normalisation(IDM/4,"2D");
 Inertia=Image_Normalisation(Inertia/4,"2D");
 Cluster_Shade=Image_Normalisation(Cluster_Shade/4,"2D");
 Cluster_Prominence=Image_Normalisation(Cluster_Prominence/4,"2D");
-        
+
 %Cluster_Prominence=adapthisteq(Cluster_Prominence);
-%% Affichage des differents indices de texture 
+%% Affichage des differents indices de texture
 figure(20)
 ax1=subplot(331); imshow(Image); title('Image');
 ax2=subplot(332); imagesc(Energy); axis off; title('Energy'); colorbar();
@@ -71,13 +71,13 @@ ax7=subplot(337); imagesc(Cluster_Shade); axis off; title('Cluster Shade'); colo
 ax8=subplot(338); imagesc(Cluster_Prominence); axis off; title('Cluster Prominence'); colorbar();
 linkaxes([ax1,ax2,ax3,ax4,ax5,ax6,ax7,ax8],'xy');
 
-%% Choix des textures a prendre en compte 
+%% Choix des textures a prendre en compte
 if ChooseTexture
-    Text2Consider=input(['Rentrer le nom des indicateurs de texture a prendre en compte sous forme d un vecteur \n',...
+    Text2Select=input(['Rentrer l indice des indicateurs de texture a prendre en compte sous forme d un vecteur \n',...
         '1 : Color, 2 : Energy, 3 : Entropy, 4 : Correlation\n',...
         '5 : IDM, 6 : Inertia, 7 : Cluster_Shade, 8 : Cluster_Prominence\n']);
 else
-    Text2Consider=1:8;
+    Text2Select=2:8;
 end
 
 %% Creation de la structure Texture comportant les differents indicateurs de texture

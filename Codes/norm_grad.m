@@ -1,4 +1,4 @@
-function n=norm_grad(nabla_u)
+function n=norm_grad(nabla_u,epsilon)
 %% Calcul la norme d'un vecteur nabla_u
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUT :
@@ -10,5 +10,5 @@ function n=norm_grad(nabla_u)
 % OUTPUT : 
 % n : vecteur colonne contenant la norme 2 du champ nabla_u en chaque point de l'espace etudie
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-n=sqrt(sum(nabla_u.^2,2));
+n=sqrt(sum(nabla_u.^2,2)+epsilon^2);
 end
