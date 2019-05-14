@@ -1,18 +1,19 @@
 clear all; close all;
 
-image_names={'Square','GeometricShape','Coins','Flag','BrainTumor','BrainTumorDetail','BrainHole','Lung'};
-extension='.png'; addpath(genpath('../Images/'));
+image_names={'BrainHole','BrainMeta_A','BrainTumor_A','BrainTumorDetail','Coins',...
+    'Flag','GBM_A','GeometricShape','Gliome003_S','Lung','Parenchyme_C','pneumopath_6_A','Square'};extension='.png'; addpath(genpath('../Images/'));
 %% Choix des images sur lesquelles entrainer les algos + importation et modification des masques
-Im2Test=[5]; NbImages=length(Im2Test);
+Im2Test=[12]; NbImages=length(Im2Test);
 ImWithRegion=4:7; 
 
-ChangeMasks=false; Bruitage=false; cinconnu=false;   ChooseTexture=true;
-Foreground2Change=[5]; Background2Change=[]; Region2Change=[];
+import_masks=true; change_masks=false;  Bruitage=false; CompareTexture=true; import_textures=true; change_textures=false; choose_texture=true;
+Foreground2Change=[6]; Background2Change=[6]; Region2Change=[]; Texture2Change=[];
 
-[Images, Textures, Foregrounds, Backgrounds,~,~]=ImportImageMasks(image_names,extension,Im2Test,ImWithRegion,ChooseTexture,ChangeMasks,Foreground2Change,Background2Change,Region2Change);
+[Images, Textures, Foregrounds, Backgrounds,~,~]=ImportImageMasks(image_names,extension,Im2Test,import_masks,ImWithRegion,change_masks,Foreground2Change,Background2Change,Region2Change,import_textures,choose_texture,change_textures,Texture2Change);
 
 %% Parametres numeriques
 fprintf('Initialisation des parametres \n');
+cinconnu=false;
 lambda_CV=1.e2; lambda_CEN=1.e3; lambda_CP=1.e2;
 
 itermax=500; 

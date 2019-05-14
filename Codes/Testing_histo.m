@@ -1,32 +1,32 @@
 clear all; close all;
 
-image_names={'Square','GeometricShape','Coins','Flag','BrainTumor','BrainTumorDetail','BrainHole','Lung'};
+image_names={'BrainHole','BrainMeta_A','BrainTumor_A','BrainTumorDetail','Coins','chat',...
+    'Flag','GBM_A','GeometricShape','Gliome003_S','Lung','Parenchyme_C','pneumopath_6_A','pneumopath_6_A_Detail','Square'};
 extension='.png'; addpath(genpath('../Images/'));
 %% Choix des images sur lesquelles entrainer les algos + importation et modification des masques
-Im2Test=[6]; NbImages=length(Im2Test);
+Im2Test=[12]; NbImages=length(Im2Test);
 ImWithRegion=5:8;
 
-ChangeMasks=false; Bruitage=false; CompareTexture=true; ImportTexture=true; ChooseTexture=true;
-Foreground2Change=[6]; Background2Change=[6]; Region2Change=[];
-[Images, Textures, Foregrounds, Backgrounds,~,~]=ImportImageMasks(image_names,extension,Im2Test,ImWithRegion,ChooseTexture,ChangeMasks,Foreground2Change,Background2Change,Region2Change);
+import_masks=true; change_masks=false;  Bruitage=false; CompareTexture=true; 
+import_textures=true; change_textures=false; choose_texture=true; verbose=true;
+Foreground2Change=[13]; Background2Change=[13]; Region2Change=[]; Texture2Change=[];
+
+[Images, Textures, Foregrounds, Backgrounds,~,~]=ImportImageMasks(image_names,extension,Im2Test,import_masks,ImWithRegion,change_masks,Foreground2Change,Background2Change,Region2Change,import_textures,choose_texture,change_textures,Texture2Change);
 
 %% Valeur de lambda + nbins a tester
-lambda=1.e2;
-nbinsF=10; nbinsB=10;
+lambda=1.e-1;
+nbinsF=5; nbinsB=5;
 Nbins=[nbinsF,nbinsB];
 % Nombre de bins a prendre en compte pour la zone a segmenter (F=Front) et pour le fond de l'image (B=Back)
 
 
 %% Parametres numeriques
-itermax=500;
+itermax=200;
 stop_u=-1.e-8; stop_J=-1.e-8;
 StopConditions=[itermax,stop_u,stop_J];
 
-mu=0.5; beta=0.5; theta=1; epsilon=0.01; % parametre >0 servant a eviter des singularites dans la construction des histogrammes
-Parameters=[mu, beta, theta, epsilon];
-
-
-d_patch=3; d_glcm=1;  % Parametres utilises pour le calcul des cartes de texture
+mu=0.9; beta=0.5; theta=1; epsilon=0.01; % parametre >0 servant a eviter des singularites dans la construction des histogrammes
+Parameters=[mu, beta, theta, epsilon, verbose];
 
 visibility='on'; cumulative.value=false;
 if cumulative.value
@@ -115,6 +115,6 @@ for im=Im2Test
 end
 
 %% Sauvegarde des masques modifies
-if ChangeMasks
+if change_masks
     SaveMasks(image_names, Foregrounds,Foreground2Change,Backgrounds, Background2Change,Regions,Region2Change);
 end

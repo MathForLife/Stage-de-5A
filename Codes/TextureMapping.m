@@ -27,7 +27,7 @@ for i=1:sz(1)
             
             Energy(i,j)=Energy(i,j)+sum(sum(glcm_temp.^2));
             
-            Entropy(i,j)=Entropy(i,j)+sum(sum(glcm_temp(mask_temp).*log2(glcm_temp(mask_temp))));
+            Entropy(i,j)=Entropy(i,j)-sum(sum(glcm_temp(mask_temp).*log2(glcm_temp(mask_temp))));
             
             Correlation(i,j)=Correlation(i,j)+sum(sum((mat_L-mu).*glcm_temp.*(mat_C-mu)))/var;
             
@@ -81,7 +81,7 @@ else
 end
 
 %% Creation de la structure Texture comportant les differents indicateurs de texture
-for text=Text2Consider
+for text=Text2Select
     name=Texture_names{text};
     if ~strcmp(name,'Color')
         save(['../Images/Textures/',name,'/',Image_name,'_TX.mat'],name);

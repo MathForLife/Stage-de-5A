@@ -14,7 +14,8 @@ function [ub,J, err_u,err_J,nQ1,nQ2,nQ3,niter]=HistogrammeSegmentation(Image,lam
 %     -1 mu: Seuil utilise pour le calcul du masque binaire u_b=H(u-\mu)
 %     -2 beta: Approximation du ratio Taille de la zone a segmenter/Taille de l'image
 %     -3 theta: Paramètre utilise pour le calcul de \tilde{u} dans l'algo de Chambolle-Pock
-%     -4 epsilon: Paramètre de regularisation des conditions sur Sigma_2, Sigma_3 et Tau (epsilon>0)
+%     -4 epsilon: Paramètre de re
+% %Q1=zeros(vect_length,dim);gularisation des conditions sur Sigma_2, Sigma_3 et Tau (epsilon>0)
 % PlotOptions: Contient des informations sur l'affichage des histogramme (passage par une fonction Matlab)
 %     -1: axe de l'histogramme h1
 %     -2: axe de l'histogramme h0
@@ -33,7 +34,7 @@ function [ub,J, err_u,err_J,nQ1,nQ2,nQ3,niter]=HistogrammeSegmentation(Image,lam
 %% Debut algo
 % Recuperation des paramètres numeriques
 itermax=StopCondition(1);
-mu=Parameters(1); beta=Parameters(2);theta=Parameters(3); epsilon=Parameters(4);
+mu=Parameters(1); beta=Parameters(2);theta=Parameters(3); epsilon=Parameters(4); verbose=Parameters(5);
 
 % Creation des histogrammes
 
@@ -68,24 +69,32 @@ u=Image; u=reshape(u,vect_length,1);
 
 % Initialisation de la variabe duale Q1=P_B(\nabla u)
 Q1=grad_mat(u,sz);
-%Q1=zeros(vect_length,dim);
-normQ1=norm_grad(Q1,0); normCond=normQ1>1;
-Q1(normCond,1)=Q1(normCond,1)./normQ1(normCond);
-Q1(normCond,2)=Q1(normCond,2)./normQ1(normCond);
+
+normQ1=norm_grad(Q1,0); normCond=normQ1>lambda;
+Q1(normCond,1)=lambda*Q1(normCond,1)./normQ1(normCond);
+Q1(normCond,2)=lambda*Q1(normCond,2)./normQ1(normCond);
 if dim==3
-    Q1(normCond,3)=Q1(normCond,3)./normQ1(normCond);
+    Q1(normCond,3)=lambda*Q1(normCond,3)./normQ1(normCond);
 end
 
-%     figure(10)
-%     subplot(1,2,1); imagesc(reshape(Q1(:,1),sz)); axis off; axis image;
-%     subplot(1,2,2); imagesc(reshape(Q1(:,2),sz)); axis off; axis image;
 % Initialisation des variables duales Q2 et Q3 valant respectivement :
 % Q2=P_{[-\lambda/\beta,-\lambda/\beta]}(Au)
 % Q3=P_{[-\lambda/(1-\beta),-\lambda/(1-\beta)]}(B(1-u))
-Q2=min(max(A*u,-lambda/beta),lambda/beta);
+% Q2=min(max(A*u,-lambda/beta),lambda/beta);
+%     
+% Q3=min(max(B*(1-u),-lambda/(1-beta)),lambda/(1-beta));
+Q2=min(max(A*u,-1/beta),1/beta);
     
-Q3=min(max(B*(1-u),-lambda/(1-beta)),lambda/(1-beta));
+Q3=min(max(B*(1-u),-1/(1-beta)),1/(1-beta));
 
+if verbose
+    figure(10);
+    subplot(141); imagesc(reshape(u,sz)); colorbar(); axis off; axis image;
+    subplot(142); imagesc(reshape(Tu.*div_mat(Q1,sz),sz)); colorbar(); axis off; axis image;
+    subplot(143); imagesc(reshape(-Tu.*A'*Q2,sz)); colorbar(); axis off; axis image;
+    subplot(144); imagesc(reshape(Tu.*B'*Q3,sz)); colorbar(); axis off; axis image;
+    pause
+end
 % Calcul des quantites de controle
 J(1)=compute_energy_histo(u,A,B,lambda,beta,sz);
 cond_u=10; err_u(1)=cond_u; 
@@ -97,41 +106,37 @@ while (niter<itermax && cond_u>StopCondition(2) && cond_J>StopCondition(3))
     
     u_old=u;
     % Iteration sur la variable primale
-%     figure(5); 
     u=u_old+Tu.*(div_mat(Q1,sz)-A'*Q2+B'*Q3);
-    
-%     subplot(141); imagesc(reshape(u,sz)); axis off; axis image;
-  
-%     fprintf('min(u) : %f, max(u) : %f\n',min(u),max(u));
-%     fprintf('min(Q1) : %f,max(Q1) : %f\n',min(Q1),max(Q1));
-%     Q2
-%     Q3
-%     %pause;
-%     subplot(142); imagesc(reshape(div_mat(Q1,sz),sz)); axis off; axis image;
     u=min(max(u,0),1);
-    %u=normalisation(u,0,1);
-%     subplot(143); imagesc(reshape(A'*Q2,sz)); axis off; axis image;
     ub=u>mu;
     
     u_tilde=u+theta*(u-u_old);
-%     subplot(144); imagesc(reshape(B'*Q3,sz)); axis off; axis image;
-
     
+    if verbose && mod(niter,10)==0
+      figure(10);   
+      subplot(141); imagesc(reshape(u_old,sz)); colorbar(); axis off; axis image;
+      subplot(142); imagesc(reshape(Tu.*div_mat(Q1,sz),sz)); colorbar(); axis off; axis image;
+      subplot(143); imagesc(reshape(-Tu.*A'*Q2,sz)); colorbar(); axis off; axis image;
+      subplot(144); imagesc(reshape(Tu.*B'*Q3,sz)); colorbar(); axis off; axis image;
+    end  
     % Iteration sur la première variable duale
     Q1=Q1+S1*grad_mat(u_tilde,sz);
-    normQ1=norm_grad(Q1,0); normCond=normQ1>1;
-    Q1(normCond,1)=Q1(normCond,1)./normQ1(normCond);
-    Q1(normCond,2)=Q1(normCond,2)./normQ1(normCond);
+    
+    normQ1=norm_grad(Q1,0); normCond=normQ1>lambda;
+    Q1(normCond,1)=lambda*Q1(normCond,1)./normQ1(normCond);
+    Q1(normCond,2)=lambda*Q1(normCond,2)./normQ1(normCond);
     if dim==3
-        Q1(normCond,3)=Q1(normCond,3)./normQ1(normCond);
+        Q1(normCond,3)=lambda*Q1(normCond,3)./normQ1(normCond);
     end
 
     % Iteration sur les 2 autres variables duales
     Q2=Q2+S2.*(A*u_tilde);
-    Q2=min(max(Q2,-lambda/beta),lambda/beta);
+%     Q2=min(max(Q2,-lambda/beta),lambda/beta);
+    Q2=min(max(Q2,-1/beta),1/beta);
     
     Q3=Q3-S3.*(B*u_tilde-b);
-    Q3=min(max(Q3,-lambda/(1-beta)),lambda/(1-beta));
+%     Q3=min(max(Q3,-lambda/(1-beta)),lambda/(1-beta));
+    Q3=min(max(Q3,-1/(1-beta)),1/(1-beta));
 
     % Calcul des quantitees de controle (les normes utilises sont des normes 2 sur tous les pixels de l'image)
     J(niter)=compute_energy_histo(ub,A,B,lambda,beta,sz);

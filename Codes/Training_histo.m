@@ -1,18 +1,18 @@
 clear all; close all;
 
-image_names={'Square','GeometricShape','Coins','Flag','BrainTumor','BrainTumorDetail','BrainHole','Lung'};
-extension='.png'; addpath(genpath('../Images/'));
+image_names={'BrainHole','BrainMeta_A','BrainTumor_A','BrainTumorDetail','Coins',...
+    'Flag','GBM_A','GeometricShape','Gliome003_S','Lung','Parenchyme_C','pneumopath_6_A','Square'};extension='.png'; addpath(genpath('../Images/'));
 %% Choix des images sur lesquelles entrainer les algos + importation et modification des masques
-Im2Train=[6]; NbImages=length(Im2Train);
-ImWithRegion=5:8; 
+Im2Train=[12]; NbImages=length(Im2Train);
+ImWithRegion=7:8; 
 
-ChangeMasks=false; Bruitage=false; CompareTexture=true; ImportTexture=true; ChooseTexture=true;
-Foreground2Change=[1,2,3]; Background2Change=[1,2,3]; Region2Change=3;
+import_masks=true; change_masks=false;  Bruitage=false; CompareTexture=true; import_textures=true; change_textures=false; choose_texture=true;
+Foreground2Change=[6]; Background2Change=[6]; Region2Change=[]; Texture2Change=[];
 
-[Images, Textures, Foregrounds, Backgrounds,Regions,Gold_Standards]=ImportImageMasks(image_names,extension,Im2Train,ImWithRegion,ChooseTexture,ChangeMasks,Foreground2Change,Background2Change,Region2Change);
+[Images, Textures, Foregrounds, Backgrounds,Regions,Gold_Standards]=ImportImageMasks(image_names,extension,Im2Train,import_masks,ImWithRegion,change_masks,Foreground2Change,Background2Change,Region2Change,import_textures,choose_texture,change_textures,Texture2Change);
 %% Initialisation des parametres du test de Sorensen-Dice
 fprintf('Initialisation des parametres \n');
-pow_min=-6; pow_max=6; pow_step=1;
+pow_min=-5; pow_max=5; pow_step=1;
 Log_scale=true; 
 
 NbinsF=[2,5,10]; NbinsB=[2,5,10];

@@ -1,4 +1,4 @@
-function Textures=ImportTextures(Images,image_names,Im2Consider)
+function Textures=ImportTextures(Images,image_names,Im2Consider,ChooseTexture)
 fprintf('Importation des textures\n');
 Texture_names={'Color','Energy','Entropy','Correlation','IDM','Inertia','Cluster_Shade','Cluster_Prominence'};
 Textures={};

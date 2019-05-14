@@ -17,5 +17,6 @@ function J=compute_energy_histo(u,A,B,lambda,beta,sz)
 TV=sum(norm_grad(grad_mat(u,sz),0));
 L1_A=sum(abs(A*u));
 L1_B=sum(abs(B*(1-u)));
-J=TV+lambda/beta*L1_A+lambda/(1-beta)*L1_B;
+% J=TV+lambda/beta*L1_A+lambda/(1-beta)*L1_B;
+J=lambda*TV+1/beta*L1_A+1/(1-beta)*L1_B;
 end
