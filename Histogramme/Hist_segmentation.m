@@ -16,13 +16,13 @@ clc
 addpath('tools');
 %parameters:
 list_im = {'zebra', 'aras','chat','BrainTumor','BrainTumorDetail','BrainMeta_A','GBM_A','Gliome003_S','Parenchyme_C','pneumopath_6_A'};  %image to_load
-im_file = list_im{4}; %
+im_file = list_im{5}; %
 type='.png';%'.png'; %or '.jpg'
 
 
-rho=1;   %TV regularization (6 for parrots, 2 for zebra) 
+rho=5;   %TV regularization (6 for parrots, 2 for zebra) 
 nb_bin=10;  %number of histogram bin on each canal
-nb_label=3; %number of class  (given input: 3 for parrots, 2 for zebra)
+nb_label=2; %number of class  (given input: 3 for parrots, 2 for zebra)
 manual_input_histogram_areas=0; %set 0 if reading input areas
 gradient_histograms=false;  %set 1 to consider histograms of gradient norms instead of histograms of colors
 niter_max=500.;

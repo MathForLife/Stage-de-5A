@@ -70,22 +70,24 @@ u=Image; u=reshape(u,vect_length,1);
 % Initialisation de la variabe duale Q1=P_B(\nabla u)
 Q1=grad_mat(u,sz);
 
-normQ1=norm_grad(Q1,0); normCond=normQ1>lambda;
-Q1(normCond,1)=lambda*Q1(normCond,1)./normQ1(normCond);
-Q1(normCond,2)=lambda*Q1(normCond,2)./normQ1(normCond);
-if dim==3
-    Q1(normCond,3)=lambda*Q1(normCond,3)./normQ1(normCond);
-end
+% normQ1=norm_grad(Q1,0); normCond=normQ1>lambda;
+% Q1(normCond,1)=lambda*Q1(normCond,1)./normQ1(normCond);
+% Q1(normCond,2)=lambda*Q1(normCond,2)./normQ1(normCond);
+% if dim==3
+%     Q1(normCond,3)=lambda*Q1(normCond,3)./normQ1(normCond);
+% end
+normQ1=max(1,norm_grad(Q1,0));
+Q1=Q1./normQ1;
 
 % Initialisation des variables duales Q2 et Q3 valant respectivement :
 % Q2=P_{[-\lambda/\beta,-\lambda/\beta]}(Au)
 % Q3=P_{[-\lambda/(1-\beta),-\lambda/(1-\beta)]}(B(1-u))
-% Q2=min(max(A*u,-lambda/beta),lambda/beta);
-%     
-% Q3=min(max(B*(1-u),-lambda/(1-beta)),lambda/(1-beta));
-Q2=min(max(A*u,-1/beta),1/beta);
+Q2=min(max(A*u,-lambda/beta),lambda/beta);
     
-Q3=min(max(B*(1-u),-1/(1-beta)),1/(1-beta));
+Q3=min(max(B*(1-u),-lambda/(1-beta)),lambda/(1-beta));
+% Q2=min(max(A*u,-1/beta),1/beta);
+%     
+% Q3=min(max(B*(1-u),-1/(1-beta)),1/(1-beta));
 
 if verbose
     figure(10);
@@ -121,29 +123,32 @@ while (niter<itermax && cond_u>StopCondition(2) && cond_J>StopCondition(3))
     end  
     % Iteration sur la première variable duale
     Q1=Q1+S1*grad_mat(u_tilde,sz);
+
+    normQ1=max(1,norm_grad(Q1,0));
+    Q1=Q1./normQ1;
     
-    normQ1=norm_grad(Q1,0); normCond=normQ1>lambda;
-    Q1(normCond,1)=lambda*Q1(normCond,1)./normQ1(normCond);
-    Q1(normCond,2)=lambda*Q1(normCond,2)./normQ1(normCond);
-    if dim==3
-        Q1(normCond,3)=lambda*Q1(normCond,3)./normQ1(normCond);
-    end
+%     normQ1=norm_grad(Q1,0); normCond=normQ1>lambda;
+%     Q1(normCond,1)=lambda*Q1(normCond,1)./normQ1(normCond);
+%     Q1(normCond,2)=lambda*Q1(normCond,2)./normQ1(normCond);
+%     if dim==3
+%         Q1(normCond,3)=lambda*Q1(normCond,3)./normQ1(normCond);
+%     end
 
     % Iteration sur les 2 autres variables duales
     Q2=Q2+S2.*(A*u_tilde);
-%     Q2=min(max(Q2,-lambda/beta),lambda/beta);
-    Q2=min(max(Q2,-1/beta),1/beta);
+    Q2=min(max(Q2,-lambda/beta),lambda/beta);
+%     Q2=min(max(Q2,-1/beta),1/beta);
     
     Q3=Q3-S3.*(B*u_tilde-b);
-%     Q3=min(max(Q3,-lambda/(1-beta)),lambda/(1-beta));
-    Q3=min(max(Q3,-1/(1-beta)),1/(1-beta));
+    Q3=min(max(Q3,-lambda/(1-beta)),lambda/(1-beta));
+%     Q3=min(max(Q3,-1/(1-beta)),1/(1-beta));
 
     % Calcul des quantitees de controle (les normes utilises sont des normes 2 sur tous les pixels de l'image)
     J(niter)=compute_energy_histo(ub,A,B,lambda,beta,sz);
     cond_u=norm(u-u_old)/norm(u_old);
     cond_J=abs(J(niter)-J(niter-1))/abs(J(niter-1));
 
-    if J(niter)>2*J(niter-1)
+    if J(niter)>J(niter-1)
         % Si la fonctionnelle augmente, on divise le pas par 2 et on recommence l'iteration
         fprintf('J= %f, niter= %d\n',J(niter),niter)
         niter=niter-1; k=k+1;

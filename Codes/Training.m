@@ -3,16 +3,16 @@ clear all; close all;
 image_names={'Square','GeometricShape','Coins','Flag','BrainTumor','BrainTumorDetail','BrainHole','Lung'};
 extension='.png'; addpath(genpath('../Images/'));
 %% Choix des images sur lesquelles entrainer les algos + importation et modification des masques
-Im2Train=[6]; NbImages=length(Im2Train);
-ImWithRegion=4:7;
+Im2Train=[1,3,6]; NbImages=length(Im2Train);
+ImWithRegion=8;
 
-ChangeMasks=false; Bruitage=false; cinconnu=false;   ChooseTexture=true;
-Foreground2Change=[1,2,3]; Background2Change=[1,2,3]; Region2Change=3;
+import_masks=true; change_masks=false;  Bruitage=false; CompareTexture=true; import_textures=true; change_textures=false; choose_texture=true;
+Foreground2Change=[3]; Background2Change=[3]; Region2Change=[]; Texture2Change=[];
 
-[Images, Textures, Foregrounds, Backgrounds,Regions,Gold_Standards]=ImportImageMasks(image_names,extension,Im2Train,ImWithRegion,ChooseTexture,ChangeMasks,Foreground2Change,Background2Change,Region2Change);
+[Images, Textures, Foregrounds, Backgrounds,Regions,Gold_Standards]=ImportImageMasks(image_names,extension,Im2Train,import_masks,ImWithRegion,change_masks,Foreground2Change,Background2Change,Region2Change,import_textures,choose_texture,change_textures,Texture2Change);
 %% Initialisation des parametres pour le test de Serensen-Dice
 fprintf('Initialisation des parametres numeriques\n');
-pow_min=-10; pow_max=10; pow_step=1;
+pow_min=-5; pow_max=5; pow_step=1;
 Log_scale=true;
 
 pow_length=length(pow_min:pow_step:pow_max);
@@ -48,7 +48,7 @@ ParametersCEN=[tho,mu,epsilon];
 theta=1; tho_u=0.25; tho_z=0.25;
 ParametersCP=[tho_u,tho_z, mu, theta];
 
-
+cinconnu=false;
 fprintf('%d iterations prevues\n',pow_length*NbImages);
 
 %% Boucle sur les images

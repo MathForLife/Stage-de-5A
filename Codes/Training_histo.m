@@ -1,12 +1,13 @@
-clear all; close all;
+clear all; close all; addpath(genpath('../Images/'));
 
 image_names={'BrainHole','BrainMeta_A','BrainTumor_A','BrainTumorDetail','Coins',...
     'Flag','GBM_A','GeometricShape','Gliome003_S','Lung','Parenchyme_C','pneumopath_6_A','Square'};extension='.png'; addpath(genpath('../Images/'));
 %% Choix des images sur lesquelles entrainer les algos + importation et modification des masques
-Im2Train=[12]; NbImages=length(Im2Train);
-ImWithRegion=7:8; 
+Im2Train=[4]; NbImages=length(Im2Train);
+ImWithRegion=4; 
 
-import_masks=true; change_masks=false;  Bruitage=false; CompareTexture=true; import_textures=true; change_textures=false; choose_texture=true;
+import_masks=true; change_masks=false;  Bruitage=false; CompareTexture=true;
+import_textures=true; change_textures=false; choose_texture=true; verbose=false;
 Foreground2Change=[6]; Background2Change=[6]; Region2Change=[]; Texture2Change=[];
 
 [Images, Textures, Foregrounds, Backgrounds,Regions,Gold_Standards]=ImportImageMasks(image_names,extension,Im2Train,import_masks,ImWithRegion,change_masks,Foreground2Change,Background2Change,Region2Change,import_textures,choose_texture,change_textures,Texture2Change);
@@ -26,7 +27,7 @@ Dice_Histo=nan(NbImages,bins_length,pow_length);
 %% Cas ou on compare l'image BrainTumorDetail avec ses 2 Gold Standards
 if ismember('BrainTumorDetail',image_names(Im2Train))
     TestGSBrainTumor=true;
-    load(['Gold_Standards/',image_names{6},'_GS2.mat'],'GS');
+    load('../Images/Gold_Standards/BrainTumorDetail_GS2.mat','GS');
     GS_FullTumor=GS;
     Dice_FullTumor=nan(bins_length,pow_length);
 else
@@ -36,7 +37,7 @@ Times=nan(NbImages,bins_length,pow_length);
 
 %% Parametres numeriques (se referer au programme HrstogrammeSegmentation pour le detail de ces parametres)
 itermax=500;  
-mu=0.5; beta=0.5; theta=1; epsilon=1;
+mu=0.9; beta=0.5; theta=1; epsilon=1;
 stop_u=-1.e-8; stop_J=-1.e-8;
 
 % Arguments utilises pour voir les histogrammes 
@@ -58,7 +59,7 @@ ax1=subplot(2,1,1); ax2=subplot(2,1,2);
 
 PlotOptions={ax1,ax2,hist_visibility};
 StopConditions=[itermax,stop_u,stop_J];
-Parameters=[mu, beta, theta, epsilon];
+Parameters=[mu, beta, theta, epsilon,verbose];
 
 %% Boucle des lambdas
 for ind=pow_min:pow_step:pow_max
